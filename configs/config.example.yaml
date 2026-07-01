@@ -1,0 +1,24 @@
+server:
+  port: 8091
+  mode: debug
+
+database:
+  driver: postgres
+  postgres_dsn: "host=127.0.0.1 user=usercore password=6Xk4EMhJ4YTpkfWa dbname=usercore port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+
+jwt:
+  secret: "change-me-in-production-use-long-random-string"
+  access_ttl_minutes: 120
+  refresh_ttl_hours: 168
+
+cors:
+  allow_origins:
+    - "http://localhost:5174"
+    - "http://127.0.0.1:5174"
+    - "http://localhost:5173"
+    - "http://127.0.0.1:5173"
+
+apps:
+  productcore_url: "http://localhost:5173"
+  supplycore_url: "http://localhost:5175"
+  aftersalescore_url: "http://localhost:5176"

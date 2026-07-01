@@ -1,0 +1,27 @@
+# Go
+bin/
+*.exe
+*.test
+*.out
+.tmp/
+
+# 本地配置
+configs/config.yaml
+
+# 前端
+web/node_modules/
+web/dist/
+
+# IDE / OS
+.cursor/
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# 环境变量
+.env
+.env.*
+!.env.example
+
+*.log
