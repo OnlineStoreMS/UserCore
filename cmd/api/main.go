@@ -34,6 +34,7 @@ func main() {
 	}
 	seed.EnsureApps(db, cfg.Apps)
 	seed.Run(db, cfg.Apps.ProductCoreURL, cfg.Apps.SupplyCoreURL, cfg.Apps.AfterSalesCoreURL)
+	seed.SyncPlatformMembers(db)
 
 	engine := router.Setup(db, cfg)
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)

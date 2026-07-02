@@ -44,7 +44,7 @@ func (s *AuthService) Login(req dto.LoginRequest) (*dto.LoginResponse, error) {
 		return nil, ErrInvalidCredentials
 	}
 
-	tenants, err := s.listTenantsForSession(user)
+	tenants, err := s.repos.User.ListTenantsForUser(user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (s *AuthService) SwitchTenant(userID uint64, isPlatform bool, tenantID uint
 	if err != nil {
 		return nil, err
 	}
-	tenants, _ := s.listTenantsForSession(user)
+	tenants, _ := s.repos.User.ListTenantsForUser(user.ID)
 	return &dto.LoginResponse{
 		AccessToken: token,
 		ExpiresAt:   exp.Unix(),
@@ -132,20 +132,13 @@ func (s *AuthService) Me(claims *jwtmgr.Claims) (*dto.MeResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	tenants, _ := s.listTenantsForSession(user)
+	tenants, _ := s.repos.User.ListTenantsForUser(user.ID)
 	return &dto.MeResponse{
 		User:        toUserProfile(user),
 		Tenant:      toTenantBrief(tenant),
 		Permissions: claims.Permissions,
 		Tenants:     toTenantBriefs(tenants),
 	}, nil
-}
-
-func (s *AuthService) listTenantsForSession(user *model.User) ([]model.Tenant, error) {
-	if user.IsPlatform == 1 {
-		return s.repos.Tenant.ListActive()
-	}
-	return s.repos.User.ListTenantsForUser(user.ID)
 }
 
 func (s *AuthService) ListApps(claims *jwtmgr.Claims) ([]dto.AppDTO, error) {

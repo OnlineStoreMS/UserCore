@@ -120,6 +120,13 @@ func (s *UserService) RemoveFromTenant(tenantID, userID, operatorID uint64) erro
 	if !ok {
 		return ErrNotFound
 	}
+	u, err := s.repos.User.GetByID(userID)
+	if err != nil {
+		return err
+	}
+	if u.IsPlatform == 1 {
+		return errors.New("不能移除平台管理员")
+	}
 	return s.repos.User.RemoveMember(tenantID, userID)
 }
 

@@ -122,6 +122,12 @@ func (r *UserRepo) ListTenantsForUser(userID uint64) ([]model.Tenant, error) {
 	return tenants, err
 }
 
+func (r *UserRepo) ListPlatformUsers() ([]model.User, error) {
+	var users []model.User
+	err := r.db.Where("is_platform = 1 AND status = 1").Order("id ASC").Find(&users).Error
+	return users, err
+}
+
 func (r *UserRepo) IsMember(userID, tenantID uint64) (bool, error) {
 	var count int64
 	err := r.db.Model(&model.TenantMember{}).

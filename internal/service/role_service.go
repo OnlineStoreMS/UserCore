@@ -157,6 +157,9 @@ func (s *TenantService) Create(companyID uint64, req dto.CreateTenantRequest) (*
 	if err := seedBuiltinRoles(s.repos, t.ID); err != nil {
 		return nil, err
 	}
+	if err := EnsurePlatformUsersInTenant(s.repos, t.ID); err != nil {
+		return nil, err
+	}
 	d := s.toDTO(t)
 	return &d, nil
 }
