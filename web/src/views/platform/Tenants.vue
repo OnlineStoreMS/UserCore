@@ -4,6 +4,9 @@ import { ElMessage } from 'element-plus'
 import {
   createTenant, fetchCompanies, fetchTenants, updateTenant, type CompanyRow, type TenantRow,
 } from '../../api/admin'
+import { useAuthStore } from '../../stores/auth'
+
+const auth = useAuthStore()
 
 const loading = ref(false)
 const tenants = ref<TenantRow[]>([])
@@ -67,6 +70,7 @@ async function submit() {
     ElMessage.success('已保存')
     dialogVisible.value = false
     await load()
+    await auth.refreshSession()
   } catch (e) {
     ElMessage.error((e as Error).message)
   }

@@ -29,6 +29,13 @@ export interface LoginResponse {
   tenants?: TenantBrief[]
 }
 
+export interface MeResponse {
+  user: UserProfile
+  tenant: TenantBrief
+  permissions: string[]
+  tenants: TenantBrief[]
+}
+
 export interface AppItem {
   id: number
   code: string
@@ -46,7 +53,7 @@ export async function login(data: LoginRequest) {
 
 export async function fetchMe() {
   const res = await client.get('/auth/me')
-  return unwrap<LoginResponse>(res)
+  return unwrap<MeResponse>(res)
 }
 
 export async function switchTenant(tenantId: number) {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Grid, OfficeBuilding, HomeFilled, Setting, SwitchButton, User, UserFilled,
@@ -35,6 +35,10 @@ async function logout() {
 function navTo(path: string) {
   router.push(path)
 }
+
+onMounted(() => {
+  void auth.refreshSession().catch(() => {})
+})
 </script>
 
 <template>

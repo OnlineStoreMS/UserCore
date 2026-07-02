@@ -203,6 +203,12 @@ func (r *TenantRepo) ListByCompany(companyID uint64) ([]model.Tenant, error) {
 	return list, err
 }
 
+func (r *TenantRepo) ListActive() ([]model.Tenant, error) {
+	var list []model.Tenant
+	err := r.db.Where("status = 1").Order("id ASC").Find(&list).Error
+	return list, err
+}
+
 func (r *TenantRepo) Create(t *model.Tenant) error { return r.db.Create(t).Error }
 
 func (r *TenantRepo) Save(t *model.Tenant) error { return r.db.Save(t).Error }
