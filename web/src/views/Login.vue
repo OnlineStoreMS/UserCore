@@ -8,8 +8,8 @@ import { useAuthStore } from '../stores/auth'
 const router = useRouter()
 const auth = useAuthStore()
 
-const email = ref('fashion@demo.com')
-const password = ref('demo123')
+const email = ref('')
+const password = ref('')
 const loading = ref(false)
 const tenants = ref<TenantBrief[]>([])
 const selectedTenantId = ref<number>()
@@ -70,16 +70,13 @@ async function onSelectTenant() {
       <template v-if="step === 'login'">
         <el-form label-position="top" @submit.prevent="onLogin">
           <el-form-item label="邮箱">
-            <el-input v-model="email" placeholder="admin@demo.com" />
+            <el-input v-model="email" placeholder="请输入邮箱" />
           </el-form-item>
           <el-form-item label="密码">
-            <el-input v-model="password" type="password" show-password @keyup.enter="onLogin" />
+            <el-input v-model="password" type="password" show-password placeholder="请输入密码" @keyup.enter="onLogin" />
           </el-form-item>
           <el-button type="primary" class="submit" :loading="loading" @click="onLogin">登录</el-button>
         </el-form>
-        <div class="hint">
-          演示账号：admin@demo.com / fashion@demo.com / digital@demo.com，密码 demo123
-        </div>
       </template>
 
       <template v-else>
@@ -122,12 +119,6 @@ h1 {
 .submit {
   width: 100%;
   margin-top: 8px;
-}
-.hint {
-  margin-top: 16px;
-  font-size: 12px;
-  color: #94a3b8;
-  line-height: 1.5;
 }
 .tenant-title {
   margin-bottom: 12px;
