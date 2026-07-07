@@ -10,9 +10,9 @@ import (
 
 // builtinRoleExtraPerms 新应用上线时，为已有内置角色补权限（幂等，每次启动执行）。
 var builtinRoleExtraPerms = map[string][]string{
-	"tenant_owner":    {"store:read", "store:write"},
-	"tenant_operator": {"store:read", "store:write"},
-	"tenant_viewer":   {"store:read"},
+	"tenant_owner":    {"store:read", "store:write", "storesync:read", "storesync:write"},
+	"tenant_operator": {"store:read", "store:write", "storesync:read", "storesync:write"},
+	"tenant_viewer":   {"store:read", "storesync:read"},
 }
 
 // EnsureBuiltinRolePermissions merges new app permissions into existing builtin roles.

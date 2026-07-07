@@ -37,10 +37,11 @@ type CORSConfig struct {
 }
 
 type AppsConfig struct {
-	ProductCoreURL    string `mapstructure:"productcore_url"`
-	SupplyCoreURL     string `mapstructure:"supplycore_url"`
-	AfterSalesCoreURL string `mapstructure:"aftersalescore_url"`
-	StoreCoreURL      string `mapstructure:"storecore_url"`
+	ProductCoreURL      string `mapstructure:"productcore_url"`
+	SupplyCoreURL       string `mapstructure:"supplycore_url"`
+	AfterSalesCoreURL   string `mapstructure:"aftersalescore_url"`
+	StoreCoreURL        string `mapstructure:"storecore_url"`
+	StoreSyncAgentURL   string `mapstructure:"storesyncagent_url"`
 }
 
 func Load(path string) (*Config, error) {
@@ -84,6 +85,9 @@ func Load(path string) (*Config, error) {
 	}
 	if cfg.Apps.StoreCoreURL == "" {
 		cfg.Apps.StoreCoreURL = "http://localhost:5179"
+	}
+	if cfg.Apps.StoreSyncAgentURL == "" {
+		cfg.Apps.StoreSyncAgentURL = "http://localhost:5178"
 	}
 	if len(cfg.CORS.AllowOrigins) == 0 {
 		cfg.CORS.AllowOrigins = []string{

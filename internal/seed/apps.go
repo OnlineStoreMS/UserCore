@@ -20,6 +20,8 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 		{Code: "aftersales:write", Name: "编辑售后", AppCode: "aftersalescore"},
 		{Code: "store:read", Name: "查看门店", AppCode: "storecore"},
 		{Code: "store:write", Name: "编辑门店", AppCode: "storecore"},
+		{Code: "storesync:read", Name: "查看电商店铺同步", AppCode: "storesyncagent"},
+		{Code: "storesync:write", Name: "编辑电商店铺同步", AppCode: "storesyncagent"},
 	}
 	if err := r.Role.EnsurePermissions(perms); err != nil {
 		log.Printf("ensure app permissions: %v", err)
@@ -70,5 +72,20 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 		log.Printf("ensure storecore app: %v", err)
 		return
 	}
-	log.Println("apps ensured: supplycore, aftersalescore, storecore")
+
+	storeSyncURL := apps.StoreSyncAgentURL
+	if storeSyncURL == "" {
+		storeSyncURL = "http://localhost:5178"
+	}
+	storeSyncApp := model.Application{
+		Code: "storesyncagent", Name: "电商店铺同步",
+		Description: "电商店铺订单与售后同步：快递助手对接、订单拉取、售后提醒与退换货管理",
+		Icon: "Shop", URL: storeSyncURL,
+		Sort: 65, Enabled: 1, RequiredPerm: "storesync:read",
+	}
+	if err := r.App.Upsert(&storeSyncApp); err != nil {
+		log.Printf("ensure storesyncagent app: %v", err)
+		return
+	}
+	log.Println("apps ensured: supplycore, aftersalescore, storecore, storesyncagent")
 }
