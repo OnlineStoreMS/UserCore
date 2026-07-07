@@ -156,11 +156,20 @@ func (r *UserRepo) RemoveMember(tenantID, userID uint64) error {
 
 func (r *UserRepo) SetUserRoles(tenantID, userID uint64, roleIDs []uint64) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("tenant_id = ? AND user_id = ?", tenantID, userID).
+		// UserRole embeds soft-delete; physical delete avoids idx_user_role conflicts on re-insert.
+		if err := tx.Unscoped().Where("tenant_id = ? AND user_id = ?", tenantID, userID).
 			Delete(&model.UserRole{}).Error; err != nil {
 			return err
 		}
+		seen := make(map[uint64]struct{}, len(roleIDs))
 		for _, rid := range roleIDs {
+			if rid == 0 {
+				continue
+			}
+			if _, dup := seen[rid]; dup {
+				continue
+			}
+			seen[rid] = struct{}{}
 			if err := tx.Create(&model.UserRole{TenantID: tenantID, UserID: userID, RoleID: rid}).Error; err != nil {
 				return err
 			}
