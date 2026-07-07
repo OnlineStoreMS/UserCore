@@ -18,6 +18,8 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 		{Code: "supply:write", Name: "编辑供应链", AppCode: "supplycore"},
 		{Code: "aftersales:read", Name: "查看售后", AppCode: "aftersalescore"},
 		{Code: "aftersales:write", Name: "编辑售后", AppCode: "aftersalescore"},
+		{Code: "store:read", Name: "查看门店", AppCode: "storecore"},
+		{Code: "store:write", Name: "编辑门店", AppCode: "storecore"},
 	}
 	if err := r.Role.EnsurePermissions(perms); err != nil {
 		log.Printf("ensure app permissions: %v", err)
@@ -53,5 +55,20 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 		log.Printf("ensure aftersalescore app: %v", err)
 		return
 	}
-	log.Println("apps ensured: supplycore, aftersalescore")
+
+	storeURL := apps.StoreCoreURL
+	if storeURL == "" {
+		storeURL = "http://localhost:5179"
+	}
+	storeApp := model.Application{
+		Code: "storecore", Name: "门店管理",
+		Description: "OSMS 门店管理：收银台、销售订单、服务工单、库存、采购、监控",
+		Icon: "Shop", URL: storeURL,
+		Sort: 70, Enabled: 1, RequiredPerm: "store:read",
+	}
+	if err := r.App.Upsert(&storeApp); err != nil {
+		log.Printf("ensure storecore app: %v", err)
+		return
+	}
+	log.Println("apps ensured: supplycore, aftersalescore, storecore")
 }

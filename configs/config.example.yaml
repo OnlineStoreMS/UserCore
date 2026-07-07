@@ -22,3 +22,4 @@ apps:
   productcore_url: "http://localhost:5173"
   supplycore_url: "http://localhost:5175"
   aftersalescore_url: "http://localhost:5176"
+  storecore_url: "http://localhost:5179"

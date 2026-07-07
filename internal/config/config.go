@@ -40,6 +40,7 @@ type AppsConfig struct {
 	ProductCoreURL    string `mapstructure:"productcore_url"`
 	SupplyCoreURL     string `mapstructure:"supplycore_url"`
 	AfterSalesCoreURL string `mapstructure:"aftersalescore_url"`
+	StoreCoreURL      string `mapstructure:"storecore_url"`
 }
 
 func Load(path string) (*Config, error) {
@@ -80,6 +81,9 @@ func Load(path string) (*Config, error) {
 	}
 	if cfg.Apps.AfterSalesCoreURL == "" {
 		cfg.Apps.AfterSalesCoreURL = "http://localhost:5176"
+	}
+	if cfg.Apps.StoreCoreURL == "" {
+		cfg.Apps.StoreCoreURL = "http://localhost:5179"
 	}
 	if len(cfg.CORS.AllowOrigins) == 0 {
 		cfg.CORS.AllowOrigins = []string{

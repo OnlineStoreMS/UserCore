@@ -33,6 +33,7 @@ func main() {
 		log.Fatal(err)
 	}
 	seed.EnsureApps(db, cfg.Apps)
+	seed.EnsureBuiltinRolePermissions(db)
 	seed.Run(db, cfg.Apps.ProductCoreURL, cfg.Apps.SupplyCoreURL, cfg.Apps.AfterSalesCoreURL)
 	seed.SyncPlatformMembers(db)
 

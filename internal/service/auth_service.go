@@ -161,6 +161,9 @@ func (s *AuthService) ListApps(claims *jwtmgr.Claims) ([]dto.AppDTO, error) {
 		if app.Code == "aftersalescore" && s.appCfg.AfterSalesCoreURL != "" {
 			url = s.appCfg.AfterSalesCoreURL
 		}
+		if app.Code == "storecore" && s.appCfg.StoreCoreURL != "" {
+			url = s.appCfg.StoreCoreURL
+		}
 		out = append(out, dto.AppDTO{
 			ID:          app.ID,
 			Code:        app.Code,

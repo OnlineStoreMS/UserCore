@@ -159,6 +159,8 @@ func seedPermissions(r *repo.Repos) error {
 		{Code: "supply:write", Name: "编辑供应链", AppCode: "supplycore"},
 		{Code: "aftersales:read", Name: "查看售后", AppCode: "aftersalescore"},
 		{Code: "aftersales:write", Name: "编辑售后", AppCode: "aftersalescore"},
+		{Code: "store:read", Name: "查看门店", AppCode: "storecore"},
+		{Code: "store:write", Name: "编辑门店", AppCode: "storecore"},
 		{Code: "tenant:admin", Name: "租户用户管理", AppCode: "usercore"},
 	}
 	return r.Role.EnsurePermissions(perms)
@@ -173,15 +175,15 @@ func seedBuiltinRoles(r *repo.Repos, tenantID uint64) error {
 			"product:read", "product:write", "product:delete", "product:import", "product:export",
 			"sku:manage", "brand:manage", "category:manage", "group:manage",
 			"platform:manage", "listing:manage", "supply:read", "supply:write",
-			"aftersales:read", "aftersales:write", "tenant:admin",
+			"aftersales:read", "aftersales:write", "store:read", "store:write", "tenant:admin",
 		}},
 		{"tenant_operator", "运营人员", []string{
 			"product:read", "product:write", "product:import", "product:export",
 			"sku:manage", "brand:manage", "category:manage", "group:manage",
 			"platform:manage", "listing:manage", "supply:read", "supply:write",
-			"aftersales:read", "aftersales:write",
+			"aftersales:read", "aftersales:write", "store:read", "store:write",
 		}},
-		{"tenant_viewer", "只读用户", []string{"product:read", "supply:read", "aftersales:read"}},
+		{"tenant_viewer", "只读用户", []string{"product:read", "supply:read", "aftersales:read", "store:read"}},
 	}
 	for _, b := range builtins {
 		role := &model.Role{TenantID: tenantID, Code: b.code, Name: b.name, IsBuiltin: 1}
