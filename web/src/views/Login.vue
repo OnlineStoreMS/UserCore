@@ -1,12 +1,21 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { login, type TenantBrief } from '../api/auth'
 import { useAuthStore } from '../stores/auth'
 
+const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+
+function afterLogin() {
+  const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
+  if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) {
+    return router.replace(redirect)
+  }
+  return router.replace('/apps')
+}
 
 const email = ref('')
 const password = ref('')
@@ -30,7 +39,7 @@ async function onLogin() {
       return
     }
     auth.setFromLogin(data)
-    await router.push('/apps')
+    await afterLogin()
   } catch (e) {
     ElMessage.error((e as Error).message)
   } finally {
@@ -52,7 +61,7 @@ async function onSelectTenant() {
       return
     }
     auth.setFromLogin(data)
-    await router.push('/apps')
+    await afterLogin()
   } catch (e) {
     ElMessage.error((e as Error).message)
   } finally {

@@ -1,6 +1,7 @@
 import axios from 'axios'
 import type { AxiosInstance } from 'axios'
 import { getToken } from '../utils/token'
+import { handleUnauthorized } from '../utils/authSession'
 
 export interface ApiResponse<T = unknown> {
   code: number
@@ -32,12 +33,23 @@ client.interceptors.request.use((config) => {
 client.interceptors.response.use(
   (res) => {
     const body = res.data as ApiResponse
+    if (body.code === 401) {
+      handleUnauthorized()
+      return Promise.reject(new Error(body.message || '登录已过期，请重新登录'))
+    }
     if (body.code !== 200) {
       return Promise.reject(new Error(body.message || '请求失败'))
     }
     return res
   },
-  (err) => Promise.reject(err),
+  (err) => {
+    if (err.response?.status === 401) {
+      handleUnauthorized()
+      const body = err.response.data as ApiResponse | undefined
+      return Promise.reject(new Error(body?.message || '登录已过期，请重新登录'))
+    }
+    return Promise.reject(err)
+  },
 )
 
 export function unwrap<T>(res: { data: ApiResponse<T> }): T {

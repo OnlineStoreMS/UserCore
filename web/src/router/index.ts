@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import PortalLayout from '../layouts/PortalLayout.vue'
-import { getToken } from '../utils/token'
+import { clearAuth, getToken, loadAuth } from '../utils/token'
+import { isAuthExpired } from '../utils/authSession'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -23,7 +24,15 @@ const router = createRouter({
 
 router.beforeEach((to) => {
   if (to.meta.public) return true
-  if (!getToken()) return { path: '/login', query: { redirect: to.fullPath } }
+  const token = getToken()
+  if (!token) {
+    return { path: '/login', query: { redirect: to.fullPath } }
+  }
+  const auth = loadAuth()
+  if (isAuthExpired(auth?.expiresAt)) {
+    clearAuth()
+    return { path: '/login', query: { redirect: to.fullPath } }
+  }
   return true
 })
 
