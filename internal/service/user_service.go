@@ -150,7 +150,8 @@ func (s *UserService) toDTO(tenantID uint64, u *model.User) (dto.UserDTO, error)
 	}
 	return dto.UserDTO{
 		ID: u.ID, Email: u.Email, DisplayName: u.DisplayName,
-		Phone: u.Phone, Status: u.Status, Roles: roles,
+		Phone: u.Phone, Status: u.Status, IsPlatform: u.IsPlatform == 1,
+		Roles: roles,
 		CreatedAt: u.CreatedAt.Format("2006-01-02 15:04:05"),
 	}, nil
 }

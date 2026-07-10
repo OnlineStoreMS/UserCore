@@ -6,6 +6,7 @@ export interface UserRow {
   displayName: string
   phone: string
   status: number
+  isPlatform: boolean
   roles: { id: number; name: string; code: string }[]
 }
 

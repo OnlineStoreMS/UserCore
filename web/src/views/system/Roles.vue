@@ -107,8 +107,11 @@ onMounted(load)
           <span v-if="row.permissions.length > 3">+{{ row.permissions.length - 3 }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="类型" width="80">
-        <template #default="{ row }">{{ row.isBuiltin ? '内置' : '自定义' }}</template>
+      <el-table-column label="类型" width="100">
+        <template #default="{ row }">
+          <el-tag v-if="row.code === 'platform_admin'" type="warning" size="small">平台</el-tag>
+          <span v-else>{{ row.isBuiltin ? '内置' : '自定义' }}</span>
+        </template>
       </el-table-column>
       <el-table-column label="操作" width="120" fixed="right">
         <template #default="{ row }">

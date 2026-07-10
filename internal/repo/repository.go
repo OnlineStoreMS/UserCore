@@ -266,6 +266,12 @@ func (r *RoleRepo) GetByID(id uint64) (*model.Role, error) {
 	return &role, err
 }
 
+func (r *RoleRepo) GetByTenantAndCode(tenantID uint64, code string) (*model.Role, error) {
+	var role model.Role
+	err := r.db.Where("tenant_id = ? AND code = ?", tenantID, code).First(&role).Error
+	return &role, err
+}
+
 func (r *RoleRepo) Create(role *model.Role) error { return r.db.Create(role).Error }
 
 func (r *RoleRepo) Update(role *model.Role) error { return r.db.Save(role).Error }

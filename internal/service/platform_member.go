@@ -7,8 +7,14 @@ func EnsurePlatformUsersInTenant(repos *repo.Repos, tenantID uint64) error {
 	if err != nil {
 		return err
 	}
+	if _, err := EnsurePlatformAdminRole(repos, tenantID); err != nil {
+		return err
+	}
 	for i := range users {
 		if err := repos.User.AddMember(tenantID, users[i].ID); err != nil {
+			return err
+		}
+		if err := AssignPlatformAdminRole(repos, tenantID, users[i].ID); err != nil {
 			return err
 		}
 	}
@@ -25,8 +31,14 @@ func SyncAllPlatformMembers(repos *repo.Repos) error {
 		return err
 	}
 	for i := range tenants {
+		if _, err := EnsurePlatformAdminRole(repos, tenants[i].ID); err != nil {
+			return err
+		}
 		for j := range users {
 			if err := repos.User.AddMember(tenants[i].ID, users[j].ID); err != nil {
+				return err
+			}
+			if err := AssignPlatformAdminRole(repos, tenants[i].ID, users[j].ID); err != nil {
 				return err
 			}
 		}

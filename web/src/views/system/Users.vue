@@ -89,6 +89,10 @@ async function onRemove(row: UserRow) {
     ElMessage.warning('不能移除当前登录用户')
     return
   }
+  if (row.isPlatform) {
+    ElMessage.warning('不能移除平台管理员')
+    return
+  }
   await ElMessageBox.confirm(
     `确定将「${row.displayName}」从租户「${currentTenantName.value}」移除？账号仍保留，可再次添加。`,
     '确认移除',
@@ -118,9 +122,11 @@ onMounted(load)
       <el-table-column prop="displayName" label="姓名" width="120" />
       <el-table-column prop="email" label="邮箱" min-width="180" />
       <el-table-column prop="phone" label="手机" width="120" />
-      <el-table-column label="角色" min-width="160">
+      <el-table-column label="角色" min-width="200">
         <template #default="{ row }">
+          <el-tag v-if="row.isPlatform" type="warning" size="small" style="margin-right: 4px">平台账号</el-tag>
           <el-tag v-for="r in row.roles" :key="r.id" size="small" style="margin-right: 4px">{{ r.name }}</el-tag>
+          <span v-if="!row.isPlatform && !row.roles.length" class="muted">未分配</span>
         </template>
       </el-table-column>
       <el-table-column label="状态" width="80">
@@ -132,7 +138,7 @@ onMounted(load)
           <el-button
             link
             type="danger"
-            :disabled="row.id === auth.auth?.user.id"
+            :disabled="row.id === auth.auth?.user.id || row.isPlatform"
             @click="onRemove(row)"
           >
             移除
@@ -184,5 +190,9 @@ onMounted(load)
   margin: 4px 0 0;
   font-size: 13px;
   color: #909399;
+}
+.muted {
+  color: #c0c4cc;
+  font-size: 12px;
 }
 </style>

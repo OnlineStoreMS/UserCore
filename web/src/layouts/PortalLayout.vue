@@ -16,6 +16,13 @@ const auth = useAuthStore()
 
 const isPlatform = computed(() => auth.auth?.user.isPlatform)
 
+const showTenantSwitch = computed(() => {
+  const tenants = auth.auth?.tenants
+  if (!tenants?.length) return false
+  if (isPlatform.value) return true
+  return tenants.length > 1
+})
+
 async function onSwitchTenant(tenantId: number) {
   try {
     const data = await switchTenant(tenantId)
@@ -68,9 +75,9 @@ onMounted(() => {
         </div>
         <div class="topbar-right">
           <el-select
-            v-if="auth.auth && auth.auth.tenants.length > 1"
+            v-if="auth.auth && showTenantSwitch"
             :model-value="auth.auth.tenant.id"
-            style="width: 160px"
+            style="width: 180px"
             @change="onSwitchTenant"
           >
             <el-option v-for="t in auth.auth.tenants" :key="t.id" :label="t.name" :value="t.id" />

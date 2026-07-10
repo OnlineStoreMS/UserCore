@@ -69,6 +69,7 @@ type UserDTO struct {
 	DisplayName string     `json:"displayName"`
 	Phone       string     `json:"phone"`
 	Status      int8       `json:"status"`
+	IsPlatform  bool       `json:"isPlatform"`
 	Roles       []RoleDTO  `json:"roles"`
 	CreatedAt   string     `json:"createdAt"`
 }

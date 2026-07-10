@@ -6,6 +6,7 @@ import (
 	"usercore/internal/model"
 	"usercore/internal/pkg/password"
 	"usercore/internal/repo"
+	"usercore/internal/service"
 
 	"gorm.io/gorm"
 )
@@ -50,10 +51,10 @@ func seedAll(db *gorm.DB, repos *repo.Repos, productCoreURL, supplyCoreURL, afte
 			return err
 		}
 
-		if err := seedBuiltinRoles(r, tenantFashion.ID); err != nil {
+		if err := service.SeedBuiltinRoles(r, tenantFashion.ID); err != nil {
 			return err
 		}
-		if err := seedBuiltinRoles(r, tenantDigital.ID); err != nil {
+		if err := service.SeedBuiltinRoles(r, tenantDigital.ID); err != nil {
 			return err
 		}
 
@@ -70,6 +71,9 @@ func seedAll(db *gorm.DB, repos *repo.Repos, productCoreURL, supplyCoreURL, afte
 		}
 		for _, tid := range []uint64{tenantFashion.ID, tenantDigital.ID} {
 			if err := r.User.AddMember(tid, platformAdmin.ID); err != nil {
+				return err
+			}
+			if err := service.AssignPlatformAdminRole(r, tid, platformAdmin.ID); err != nil {
 				return err
 			}
 		}
@@ -164,52 +168,11 @@ func seedPermissions(r *repo.Repos) error {
 		{Code: "storesync:read", Name: "查看电商店铺同步", AppCode: "storesyncagent"},
 		{Code: "storesync:write", Name: "编辑电商店铺同步", AppCode: "storesyncagent"},
 		{Code: "tenant:admin", Name: "租户用户管理", AppCode: "usercore"},
+		{Code: "platform:admin", Name: "平台租户管理", AppCode: "usercore"},
 	}
 	return r.Role.EnsurePermissions(perms)
 }
 
-func seedBuiltinRoles(r *repo.Repos, tenantID uint64) error {
-	builtins := []struct {
-		code, name string
-		perms      []string
-	}{
-		{"tenant_owner", "租户管理员", []string{
-			"product:read", "product:write", "product:delete", "product:import", "product:export",
-			"sku:manage", "brand:manage", "category:manage", "group:manage",
-			"platform:manage", "listing:manage", "supply:read", "supply:write",
-			"aftersales:read", "aftersales:write", "store:read", "store:write",
-			"storesync:read", "storesync:write", "tenant:admin",
-		}},
-		{"tenant_operator", "运营人员", []string{
-			"product:read", "product:write", "product:import", "product:export",
-			"sku:manage", "brand:manage", "category:manage", "group:manage",
-			"platform:manage", "listing:manage", "supply:read", "supply:write",
-			"aftersales:read", "aftersales:write", "store:read", "store:write",
-			"storesync:read", "storesync:write",
-		}},
-		{"tenant_viewer", "只读用户", []string{"product:read", "supply:read", "aftersales:read", "store:read", "storesync:read"}},
-	}
-	for _, b := range builtins {
-		role := &model.Role{TenantID: tenantID, Code: b.code, Name: b.name, IsBuiltin: 1}
-		if err := r.Role.Create(role); err != nil {
-			return err
-		}
-		if err := r.Role.SetPermissions(role.ID, b.perms); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func findRole(r *repo.Repos, tenantID uint64, code string) (*model.Role, error) {
-	roles, err := r.Role.ListByTenant(tenantID)
-	if err != nil {
-		return nil, err
-	}
-	for i := range roles {
-		if roles[i].Code == code {
-			return &roles[i], nil
-		}
-	}
-	return nil, gorm.ErrRecordNotFound
+	return r.Role.GetByTenantAndCode(tenantID, code)
 }

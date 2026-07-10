@@ -154,7 +154,7 @@ func (s *TenantService) Create(companyID uint64, req dto.CreateTenantRequest) (*
 	if err := s.repos.Tenant.Create(t); err != nil {
 		return nil, err
 	}
-	if err := seedBuiltinRoles(s.repos, t.ID); err != nil {
+	if err := SeedBuiltinRoles(s.repos, t.ID); err != nil {
 		return nil, err
 	}
 	if err := EnsurePlatformUsersInTenant(s.repos, t.ID); err != nil {
@@ -221,31 +221,3 @@ func toTenantDTO(t *model.Tenant) dto.TenantDTO {
 	}
 }
 
-func seedBuiltinRoles(repos *repo.Repos, tenantID uint64) error {
-	builtins := []struct {
-		code, name string
-		perms      []string
-	}{
-		{"tenant_owner", "租户管理员", []string{
-			"product:read", "product:write", "product:delete", "product:import", "product:export",
-			"sku:manage", "brand:manage", "category:manage", "group:manage",
-			"platform:manage", "listing:manage", "tenant:admin",
-		}},
-		{"tenant_operator", "运营人员", []string{
-			"product:read", "product:write", "product:import", "product:export",
-			"sku:manage", "brand:manage", "category:manage", "group:manage",
-			"platform:manage", "listing:manage",
-		}},
-		{"tenant_viewer", "只读用户", []string{"product:read"}},
-	}
-	for _, b := range builtins {
-		role := &model.Role{TenantID: tenantID, Code: b.code, Name: b.name, IsBuiltin: 1}
-		if err := repos.Role.Create(role); err != nil {
-			return err
-		}
-		if err := repos.Role.SetPermissions(role.ID, b.perms); err != nil {
-			return err
-		}
-	}
-	return nil
-}
