@@ -23,3 +23,5 @@ apps:
   supplycore_url: "http://localhost:5175"
   aftersalescore_url: "http://localhost:5176"
   storecore_url: "http://localhost:5179"
+  storesyncagent_url: "http://localhost:5178"
+  warehousecore_url: "http://localhost:5180"

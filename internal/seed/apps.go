@@ -22,6 +22,8 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 		{Code: "store:write", Name: "编辑门店", AppCode: "storecore"},
 		{Code: "storesync:read", Name: "查看电商店铺同步", AppCode: "storesyncagent"},
 		{Code: "storesync:write", Name: "编辑电商店铺同步", AppCode: "storesyncagent"},
+		{Code: "warehouse:read", Name: "查看仓储", AppCode: "warehousecore"},
+		{Code: "warehouse:write", Name: "编辑仓储", AppCode: "warehousecore"},
 	}
 	if err := r.Role.EnsurePermissions(perms); err != nil {
 		log.Printf("ensure app permissions: %v", err)
@@ -87,5 +89,20 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 		log.Printf("ensure storesyncagent app: %v", err)
 		return
 	}
-	log.Println("apps ensured: supplycore, aftersalescore, storecore, storesyncagent")
+
+	warehouseURL := apps.WarehouseCoreURL
+	if warehouseURL == "" {
+		warehouseURL = "http://localhost:5180"
+	}
+	warehouseApp := model.Application{
+		Code: "warehousecore", Name: "仓储中心",
+		Description: "OSMS 仓储中心：仓配商品、仓库货位、库存账、盘点、调拨与其他出入库",
+		Icon: "Box", URL: warehouseURL,
+		Sort: 60, Enabled: 1, RequiredPerm: "warehouse:read",
+	}
+	if err := r.App.Upsert(&warehouseApp); err != nil {
+		log.Printf("ensure warehousecore app: %v", err)
+		return
+	}
+	log.Println("apps ensured: supplycore, aftersalescore, storecore, storesyncagent, warehousecore")
 }

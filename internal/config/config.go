@@ -42,6 +42,7 @@ type AppsConfig struct {
 	AfterSalesCoreURL   string `mapstructure:"aftersalescore_url"`
 	StoreCoreURL        string `mapstructure:"storecore_url"`
 	StoreSyncAgentURL   string `mapstructure:"storesyncagent_url"`
+	WarehouseCoreURL    string `mapstructure:"warehousecore_url"`
 }
 
 func Load(path string) (*Config, error) {
@@ -89,6 +90,9 @@ func Load(path string) (*Config, error) {
 	if cfg.Apps.StoreSyncAgentURL == "" {
 		cfg.Apps.StoreSyncAgentURL = "http://localhost:5178"
 	}
+	if cfg.Apps.WarehouseCoreURL == "" {
+		cfg.Apps.WarehouseCoreURL = "http://localhost:5180"
+	}
 	if len(cfg.CORS.AllowOrigins) == 0 {
 		cfg.CORS.AllowOrigins = []string{
 			"http://localhost:5173",
@@ -99,6 +103,10 @@ func Load(path string) (*Config, error) {
 			"http://127.0.0.1:5175",
 			"http://localhost:5176",
 			"http://127.0.0.1:5176",
+			"http://localhost:5179",
+			"http://127.0.0.1:5179",
+			"http://localhost:5180",
+			"http://127.0.0.1:5180",
 		}
 	}
 	return &cfg, nil
