@@ -126,7 +126,7 @@ func seedAll(db *gorm.DB, repos *repo.Repos, productCoreURL, supplyCoreURL, afte
 		supplyApp := model.Application{
 			Code: "supplycore", Name: "供应链中心",
 			Description: "供应商管理（VMS）与采购管理（PMS），维护 SKU 供货报价与采购跟单",
-			Icon: "Van", URL: sURL,
+			Icon: "ShoppingCart", URL: sURL,
 			Sort: 90, Enabled: 1, RequiredPerm: "supply:read",
 		}
 		if err := r.App.Upsert(&supplyApp); err != nil {
@@ -139,7 +139,7 @@ func seedAll(db *gorm.DB, repos *repo.Repos, productCoreURL, supplyCoreURL, afte
 		afterSalesApp := model.Application{
 			Code: "aftersalescore", Name: "售后中心",
 			Description: "退货包裹开箱视频录制、快递单号识别与问题凭证管理",
-			Icon: "VideoCamera", URL: asURL,
+			Icon: "Headset", URL: asURL,
 			Sort: 80, Enabled: 1, RequiredPerm: "aftersales:read",
 		}
 		return r.App.Upsert(&afterSalesApp)

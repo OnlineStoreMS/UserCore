@@ -65,3 +65,8 @@ export async function fetchApps() {
   const res = await client.get('/apps')
   return unwrap<AppItem[]>(res)
 }
+
+export async function saveAppOrder(appIds: number[]) {
+  const res = await client.put('/apps/order', { appIds })
+  return unwrap<{ saved: boolean }>(res)
+}

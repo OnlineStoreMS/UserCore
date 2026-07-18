@@ -14,6 +14,7 @@ func RegisterRoutes(g *gin.RouterGroup, h *Handler, jwtAuth gin.HandlerFunc) {
 	auth.GET("/auth/me", h.Me)
 	auth.POST("/auth/switch-tenant", h.SwitchTenant)
 	auth.GET("/apps", h.ListApps)
+	auth.PUT("/apps/order", h.SaveAppOrder)
 	auth.GET("/permissions", h.ListPermissions)
 
 	tenantAdmin := auth.Group("")

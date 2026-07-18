@@ -2,12 +2,13 @@ package service
 
 import (
 	"errors"
+	"sort"
 	"strings"
 
 	"usercore/internal/config"
 	"usercore/internal/dto"
-	jwtmgr "usercore/internal/pkg/jwt"
 	"usercore/internal/model"
+	jwtmgr "usercore/internal/pkg/jwt"
 	"usercore/internal/pkg/password"
 	"usercore/internal/repo"
 
@@ -151,39 +152,140 @@ func (s *AuthService) ListApps(claims *jwtmgr.Claims) ([]dto.AppDTO, error) {
 		if app.RequiredPerm != "" && !claims.IsPlatform && !hasPerm(claims.Permissions, app.RequiredPerm) {
 			continue
 		}
-		url := app.URL
-		if app.Code == "productcore" && s.appCfg.ProductCoreURL != "" {
-			url = s.appCfg.ProductCoreURL
-		}
-		if app.Code == "supplycore" && s.appCfg.SupplyCoreURL != "" {
-			url = s.appCfg.SupplyCoreURL
-		}
-		if app.Code == "aftersalescore" && s.appCfg.AfterSalesCoreURL != "" {
-			url = s.appCfg.AfterSalesCoreURL
-		}
-		if app.Code == "storecore" && s.appCfg.StoreCoreURL != "" {
-			url = s.appCfg.StoreCoreURL
-		}
-		if app.Code == "warehousecore" && s.appCfg.WarehouseCoreURL != "" {
-			url = s.appCfg.WarehouseCoreURL
-		}
-		if app.Code == "ordercore" && s.appCfg.OrderCoreURL != "" {
-			url = s.appCfg.OrderCoreURL
-		}
-		if app.Code == "customercore" && s.appCfg.CustomerCoreURL != "" {
-			url = s.appCfg.CustomerCoreURL
-		}
 		out = append(out, dto.AppDTO{
 			ID:          app.ID,
 			Code:        app.Code,
 			Name:        app.Name,
 			Description: app.Description,
 			Icon:        app.Icon,
-			URL:         url,
+			URL:         s.resolveAppURL(app),
 			Sort:        app.Sort,
 		})
 	}
+	s.applyUserAppOrder(claims.UserID, out)
 	return out, nil
+}
+
+func (s *AuthService) SaveAppOrder(claims *jwtmgr.Claims, appIDs []uint64) error {
+	if claims == nil || claims.UserID == 0 {
+		return ErrInvalidCredentials
+	}
+	allowed, err := s.ListApps(claims)
+	if err != nil {
+		return err
+	}
+	allowedSet := make(map[uint64]struct{}, len(allowed))
+	for _, a := range allowed {
+		allowedSet[a.ID] = struct{}{}
+	}
+	filtered := make([]uint64, 0, len(appIDs))
+	seen := make(map[uint64]struct{}, len(appIDs))
+	for _, id := range appIDs {
+		if id == 0 {
+			continue
+		}
+		if _, ok := allowedSet[id]; !ok {
+			continue
+		}
+		if _, dup := seen[id]; dup {
+			continue
+		}
+		seen[id] = struct{}{}
+		filtered = append(filtered, id)
+	}
+	// append any allowed apps missing from payload (keep them after)
+	for _, a := range allowed {
+		if _, ok := seen[a.ID]; !ok {
+			filtered = append(filtered, a.ID)
+		}
+	}
+	return s.repos.App.ReplaceUserAppOrders(claims.UserID, filtered)
+}
+
+func (s *AuthService) applyUserAppOrder(userID uint64, apps []dto.AppDTO) {
+	if userID == 0 || len(apps) == 0 {
+		return
+	}
+	orders, err := s.repos.App.ListUserAppOrders(userID)
+	if err != nil || len(orders) == 0 {
+		return
+	}
+	orderMap := make(map[uint64]int, len(orders))
+	for _, o := range orders {
+		orderMap[o.AppID] = o.Sort
+	}
+	sort.SliceStable(apps, func(i, j int) bool {
+		oi, oki := orderMap[apps[i].ID]
+		oj, okj := orderMap[apps[j].ID]
+		if oki && okj {
+			if oi != oj {
+				return oi > oj
+			}
+			return apps[i].ID < apps[j].ID
+		}
+		if oki != okj {
+			return oki
+		}
+		if apps[i].Sort != apps[j].Sort {
+			return apps[i].Sort > apps[j].Sort
+		}
+		return apps[i].ID < apps[j].ID
+	})
+	for i := range apps {
+		if s, ok := orderMap[apps[i].ID]; ok {
+			apps[i].Sort = s
+		}
+	}
+}
+
+func (s *AuthService) resolveAppURL(app model.Application) string {
+	url := app.URL
+	if s.appCfg == nil {
+		return url
+	}
+	switch app.Code {
+	case "productcore":
+		if s.appCfg.ProductCoreURL != "" {
+			return s.appCfg.ProductCoreURL
+		}
+	case "supplycore":
+		if s.appCfg.SupplyCoreURL != "" {
+			return s.appCfg.SupplyCoreURL
+		}
+	case "aftersalescore":
+		if s.appCfg.AfterSalesCoreURL != "" {
+			return s.appCfg.AfterSalesCoreURL
+		}
+	case "storecore":
+		if s.appCfg.StoreCoreURL != "" {
+			return s.appCfg.StoreCoreURL
+		}
+	case "warehousecore":
+		if s.appCfg.WarehouseCoreURL != "" {
+			return s.appCfg.WarehouseCoreURL
+		}
+	case "ordercore":
+		if s.appCfg.OrderCoreURL != "" {
+			return s.appCfg.OrderCoreURL
+		}
+	case "customercore":
+		if s.appCfg.CustomerCoreURL != "" {
+			return s.appCfg.CustomerCoreURL
+		}
+	case "mallcore":
+		if s.appCfg.MallCoreURL != "" {
+			return s.appCfg.MallCoreURL
+		}
+	case "shippingcore":
+		if s.appCfg.ShippingCoreURL != "" {
+			return s.appCfg.ShippingCoreURL
+		}
+	case "storesyncagent":
+		if s.appCfg.StoreSyncAgentURL != "" {
+			return s.appCfg.StoreSyncAgentURL
+		}
+	}
+	return url
 }
 
 func (s *AuthService) issueForTenant(user *model.User, tenantID uint64) (*dto.TenantBriefDTO, []string, error) {

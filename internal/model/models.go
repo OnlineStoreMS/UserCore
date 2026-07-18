@@ -115,6 +115,15 @@ type Application struct {
 
 func (Application) TableName() string { return "applications" }
 
+// UserAppOrder 用户在应用中心的自定义排序（每人独立，不影响默认 Application.sort）
+type UserAppOrder struct {
+	UserID uint64 `gorm:"primaryKey" json:"userId"`
+	AppID  uint64 `gorm:"primaryKey" json:"appId"`
+	Sort   int    `gorm:"not null;default:0" json:"sort"`
+}
+
+func (UserAppOrder) TableName() string { return "user_app_orders" }
+
 // AppTenantGrant 租户可使用的应用（可选，空表表示全部启用应用可用）
 type AppTenantGrant struct {
 	BaseModel

@@ -47,6 +47,11 @@ type AppDTO struct {
 	Sort        int    `json:"sort"`
 }
 
+// SaveAppOrderRequest 应用中心拖拽排序；appIds 为展示顺序（靠前的优先）
+type SaveAppOrderRequest struct {
+	AppIDs []uint64 `json:"appIds" binding:"required,min=1"`
+}
+
 type CreateUserRequest struct {
 	Email       string   `json:"email" binding:"required,email"`
 	Password    string   `json:"password" binding:"required,min=6"`

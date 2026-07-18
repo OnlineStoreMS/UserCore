@@ -1,6 +1,8 @@
 package repo
 
 import (
+	"errors"
+
 	"usercore/internal/model"
 
 	"gorm.io/gorm"
@@ -333,8 +335,23 @@ func (r *AppRepo) ListEnabled() ([]model.Application, error) {
 	return list, err
 }
 
+// Upsert 按 code 创建或更新元数据；保留已有 Sort，避免启动覆盖用户/运维调整的默认顺序。
 func (r *AppRepo) Upsert(app *model.Application) error {
-	return r.db.Where("code = ?", app.Code).Assign(app).FirstOrCreate(app).Error
+	var existing model.Application
+	err := r.db.Where("code = ?", app.Code).First(&existing).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return r.db.Create(app).Error
+		}
+		return err
+	}
+	existing.Name = app.Name
+	existing.Description = app.Description
+	existing.Icon = app.Icon
+	existing.URL = app.URL
+	existing.Enabled = app.Enabled
+	existing.RequiredPerm = app.RequiredPerm
+	return r.db.Save(&existing).Error
 }
 
 func (r *AppRepo) ListForTenant(tenantID uint64) ([]model.Application, error) {
@@ -350,4 +367,37 @@ func (r *AppRepo) ListForTenant(tenantID uint64) ([]model.Application, error) {
 		Order("applications.sort DESC, applications.id ASC").
 		Find(&list).Error
 	return list, err
+}
+
+func (r *AppRepo) ListUserAppOrders(userID uint64) ([]model.UserAppOrder, error) {
+	var list []model.UserAppOrder
+	err := r.db.Where("user_id = ?", userID).Order("sort DESC").Find(&list).Error
+	return list, err
+}
+
+func (r *AppRepo) ReplaceUserAppOrders(userID uint64, appIDs []uint64) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("user_id = ?", userID).Delete(&model.UserAppOrder{}).Error; err != nil {
+			return err
+		}
+		if len(appIDs) == 0 {
+			return nil
+		}
+		rows := make([]model.UserAppOrder, 0, len(appIDs))
+		n := len(appIDs)
+		for i, appID := range appIDs {
+			if appID == 0 {
+				continue
+			}
+			rows = append(rows, model.UserAppOrder{
+				UserID: userID,
+				AppID:  appID,
+				Sort:   n - i,
+			})
+		}
+		if len(rows) == 0 {
+			return nil
+		}
+		return tx.Create(&rows).Error
+	})
 }

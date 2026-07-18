@@ -80,6 +80,19 @@ func (h *Handler) ListApps(c *gin.Context) {
 	response.OK(c, list)
 }
 
+func (h *Handler) SaveAppOrder(c *gin.Context) {
+	var req dto.SaveAppOrderRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := h.auth.SaveAppOrder(middleware.Claims(c), req.AppIDs); err != nil {
+		response.Fail(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.OK(c, gin.H{"saved": true})
+}
+
 func (h *Handler) ListUsers(c *gin.Context) {
 	var q dto.PageQuery
 	_ = c.ShouldBindQuery(&q)
