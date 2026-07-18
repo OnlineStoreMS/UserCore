@@ -4,7 +4,7 @@ server:
 
 database:
   driver: postgres
-  postgres_dsn: "host=127.0.0.1 user=usercore password=6Xk4EMhJ4YTpkfWa dbname=usercore port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+  postgres_dsn: "host=127.0.0.1 user=usercore password=YOUR_PASSWORD dbname=usercore port=5432 sslmode=disable TimeZone=Asia/Shanghai"
 
 jwt:
   secret: "change-me-in-production-use-long-random-string"
@@ -29,6 +29,12 @@ cors:
     - "http://127.0.0.1:5180"
     - "http://localhost:5181"
     - "http://127.0.0.1:5181"
+    - "http://localhost:5182"
+    - "http://127.0.0.1:5182"
+    - "http://localhost:5183"
+    - "http://127.0.0.1:5183"
+    - "http://localhost:5184"
+    - "http://127.0.0.1:5184"
 
 apps:
   productcore_url: "http://localhost:5173"
@@ -37,5 +43,7 @@ apps:
   storecore_url: "http://localhost:5179"
   storesyncagent_url: "http://localhost:5178"
   warehousecore_url: "http://localhost:5180"
+  shippingcore_url: "http://localhost:5181"
   ordercore_url: "http://localhost:5182"
-  customercore_url: "http://localhost:5181"
+  customercore_url: "http://localhost:5183"
+  mallcore_url: "http://localhost:5184"
