@@ -22,6 +22,7 @@ func PlatformAdminRolePermissions() []string {
 		"store:read", "store:write",
 		"storesync:read", "storesync:write",
 		"warehouse:read", "warehouse:write",
+		"customer:read", "customer:write",
 		"tenant:admin", "platform:admin",
 	}
 }
@@ -46,6 +47,7 @@ func SeedBuiltinRoles(repos *repo.Repos, tenantID uint64) error {
 				"store:read", "store:write",
 				"storesync:read", "storesync:write",
 				"warehouse:read", "warehouse:write",
+		"customer:read", "customer:write",
 				"tenant:admin",
 			},
 		},
@@ -60,11 +62,12 @@ func SeedBuiltinRoles(repos *repo.Repos, tenantID uint64) error {
 				"store:read", "store:write",
 				"storesync:read", "storesync:write",
 				"warehouse:read", "warehouse:write",
+		"customer:read", "customer:write",
 			},
 		},
 		{
 			"tenant_viewer", "只读用户", "",
-			[]string{"product:read", "supply:read", "aftersales:read", "store:read", "storesync:read", "warehouse:read"},
+			[]string{"product:read", "supply:read", "aftersales:read", "store:read", "storesync:read", "warehouse:read", "customer:read"},
 		},
 	}
 	for _, b := range builtins {

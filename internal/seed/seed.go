@@ -169,6 +169,8 @@ func seedPermissions(r *repo.Repos) error {
 		{Code: "storesync:write", Name: "编辑电商店铺同步", AppCode: "storesyncagent"},
 		{Code: "warehouse:read", Name: "查看仓储", AppCode: "warehousecore"},
 		{Code: "warehouse:write", Name: "编辑仓储", AppCode: "warehousecore"},
+		{Code: "order:read", Name: "查看订单中心", AppCode: "ordercore"},
+		{Code: "order:write", Name: "编辑订单中心", AppCode: "ordercore"},
 		{Code: "tenant:admin", Name: "租户用户管理", AppCode: "usercore"},
 		{Code: "platform:admin", Name: "平台租户管理", AppCode: "usercore"},
 	}
