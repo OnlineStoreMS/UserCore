@@ -45,7 +45,7 @@ func (s *AuthService) Login(req dto.LoginRequest) (*dto.LoginResponse, error) {
 		return nil, ErrInvalidCredentials
 	}
 
-	tenants, err := s.repos.User.ListTenantsForUser(user.ID)
+	tenants, err := s.listTenantsForSession(user)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,10 @@ func (s *AuthService) SwitchTenant(userID uint64, isPlatform bool, tenantID uint
 	if err != nil {
 		return nil, err
 	}
-	tenants, _ := s.repos.User.ListTenantsForUser(user.ID)
+	tenants, err := s.listTenantsForSession(user)
+	if err != nil {
+		return nil, err
+	}
 	return &dto.LoginResponse{
 		AccessToken: token,
 		ExpiresAt:   exp.Unix(),
@@ -133,7 +136,10 @@ func (s *AuthService) Me(claims *jwtmgr.Claims) (*dto.MeResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	tenants, _ := s.repos.User.ListTenantsForUser(user.ID)
+	tenants, err := s.listTenantsForSession(user)
+	if err != nil {
+		return nil, err
+	}
 	return &dto.MeResponse{
 		User:        toUserProfile(user),
 		Tenant:      toTenantBrief(tenant),
@@ -311,6 +317,14 @@ func (s *AuthService) issueForTenant(user *model.User, tenantID uint64) (*dto.Te
 	}
 	brief := toTenantBrief(tenant)
 	return &brief, perms, nil
+}
+
+// listTenantsForSession: 平台管理员返回全部启用租户，便于跨租户切换；普通用户仅返回成员租户。
+func (s *AuthService) listTenantsForSession(user *model.User) ([]model.Tenant, error) {
+	if user.IsPlatform == 1 {
+		return s.repos.Tenant.ListActive()
+	}
+	return s.repos.User.ListTenantsForUser(user.ID)
 }
 
 func toUserProfile(u *model.User) dto.UserProfileDTO {
