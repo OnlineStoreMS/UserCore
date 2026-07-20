@@ -34,6 +34,8 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 		{Code: "order:write", Name: "编辑订单中心", AppCode: "ordercore"},
 		{Code: "mall:read", Name: "查看私域商城", AppCode: "mallcore"},
 		{Code: "mall:write", Name: "编辑私域商城", AppCode: "mallcore"},
+		{Code: "material:read", Name: "查看素材中心", AppCode: "materialcore"},
+		{Code: "material:write", Name: "编辑素材中心", AppCode: "materialcore"},
 	}
 	if err := r.Role.EnsurePermissions(perms); err != nil {
 		log.Printf("ensure app permissions: %v", err)
@@ -101,6 +103,12 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 			Icon: "UserFilled", URL: defaultURL(apps.CustomerCoreURL, "http://localhost:5183"),
 			Sort: 55, Enabled: 1, RequiredPerm: "customer:read",
 		},
+		{
+			Code: "materialcore", Name: "素材中心",
+			Description: "OSMS 素材中心：商品宣传图片/视频库，自定义分类，询盘快发与手机扫码上传",
+			Icon: "Picture", URL: defaultURL(apps.MaterialCoreURL, "http://localhost:5185"),
+			Sort: 85, Enabled: 1, RequiredPerm: "material:read",
+		},
 	}
 
 	for i := range defs {
@@ -110,7 +118,7 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 			return
 		}
 	}
-	log.Println("apps ensured: productcore, ordercore, supplycore, aftersalescore, mallcore, storecore, storesyncagent, shippingcore, warehousecore, customercore")
+	log.Println("apps ensured: productcore, ordercore, supplycore, aftersalescore, mallcore, storecore, storesyncagent, shippingcore, warehousecore, customercore, materialcore")
 }
 
 func defaultURL(cfg, fallback string) string {

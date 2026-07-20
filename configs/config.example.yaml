@@ -47,3 +47,4 @@ apps:
   ordercore_url: "http://localhost:5182"
   customercore_url: "http://localhost:5183"
   mallcore_url: "http://localhost:5184"
+  materialcore_url: "http://localhost:5185"
