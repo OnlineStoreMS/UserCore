@@ -16,6 +16,16 @@ type LoginResponse struct {
 	Tenants      []TenantBriefDTO `json:"tenants,omitempty"`
 }
 
+type RefreshRequest struct {
+	RefreshToken string `json:"refreshToken" binding:"required"`
+}
+
+type RefreshResponse struct {
+	AccessToken  string `json:"accessToken"`
+	ExpiresAt    int64  `json:"expiresAt"`
+	RefreshToken string `json:"refreshToken"`
+}
+
 type UserProfileDTO struct {
 	ID          uint64 `json:"id"`
 	Email       string `json:"email"`

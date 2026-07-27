@@ -4,6 +4,7 @@ import (
 	"errors"
 	"sort"
 	"strings"
+	"time"
 
 	"usercore/internal/config"
 	"usercore/internal/dto"
@@ -20,6 +21,7 @@ var (
 	ErrUserDisabled       = errors.New("账号已禁用")
 	ErrTenantForbidden    = errors.New("无权访问该租户")
 	ErrTenantRequired     = errors.New("请选择租户")
+	ErrInvalidRefresh     = errors.New("刷新凭证无效或已过期，请重新登录")
 )
 
 type AuthService struct {
@@ -73,19 +75,12 @@ func (s *AuthService) Login(req dto.LoginRequest) (*dto.LoginResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	token, exp, err := s.jwt.IssueAccess(jwtmgr.Claims{
-		UserID:      user.ID,
-		CompanyID:   tenant.CompanyID,
-		TenantID:    tenant.ID,
-		Email:       user.Email,
-		DisplayName: user.DisplayName,
-		Permissions: perms,
-		IsPlatform:  user.IsPlatform == 1,
-	})
+	access, refresh, exp, err := s.issueTokenPair(user, tenant, perms, user.IsPlatform == 1)
 	if err != nil {
 		return nil, err
 	}
-	resp.AccessToken = token
+	resp.AccessToken = access
+	resp.RefreshToken = refresh
 	resp.ExpiresAt = exp.Unix()
 	resp.Tenant = *tenant
 	resp.Permissions = perms
@@ -101,7 +96,59 @@ func (s *AuthService) SwitchTenant(userID uint64, isPlatform bool, tenantID uint
 	if err != nil {
 		return nil, err
 	}
-	token, exp, err := s.jwt.IssueAccess(jwtmgr.Claims{
+	access, refresh, exp, err := s.issueTokenPair(user, tenant, perms, isPlatform)
+	if err != nil {
+		return nil, err
+	}
+	tenants, err := s.listTenantsForSession(user)
+	if err != nil {
+		return nil, err
+	}
+	return &dto.LoginResponse{
+		AccessToken:  access,
+		RefreshToken: refresh,
+		ExpiresAt:    exp.Unix(),
+		User:         toUserProfile(user),
+		Tenant:       *tenant,
+		Permissions:  perms,
+		Tenants:      toTenantBriefs(tenants),
+	}, nil
+}
+
+func (s *AuthService) Refresh(refreshToken string) (*dto.RefreshResponse, error) {
+	claims, err := s.jwt.ParseRefresh(refreshToken)
+	if err != nil {
+		return nil, ErrInvalidRefresh
+	}
+	user, err := s.repos.User.GetByID(claims.UserID)
+	if err != nil {
+		return nil, ErrInvalidRefresh
+	}
+	if user.Status != 1 {
+		return nil, ErrUserDisabled
+	}
+	tenant, perms, err := s.issueForTenant(user, claims.TenantID)
+	if err != nil {
+		return nil, ErrInvalidRefresh
+	}
+	access, refresh, exp, err := s.issueTokenPair(user, tenant, perms, user.IsPlatform == 1)
+	if err != nil {
+		return nil, err
+	}
+	return &dto.RefreshResponse{
+		AccessToken:  access,
+		RefreshToken: refresh,
+		ExpiresAt:    exp.Unix(),
+	}, nil
+}
+
+func (s *AuthService) issueTokenPair(
+	user *model.User,
+	tenant *dto.TenantBriefDTO,
+	perms []string,
+	isPlatform bool,
+) (accessToken, refreshToken string, exp time.Time, err error) {
+	accessToken, exp, err = s.jwt.IssueAccess(jwtmgr.Claims{
 		UserID:      user.ID,
 		CompanyID:   tenant.CompanyID,
 		TenantID:    tenant.ID,
@@ -111,20 +158,13 @@ func (s *AuthService) SwitchTenant(userID uint64, isPlatform bool, tenantID uint
 		IsPlatform:  isPlatform,
 	})
 	if err != nil {
-		return nil, err
+		return "", "", time.Time{}, err
 	}
-	tenants, err := s.listTenantsForSession(user)
+	refreshToken, _, err = s.jwt.IssueRefresh(user.ID, tenant.ID)
 	if err != nil {
-		return nil, err
+		return "", "", time.Time{}, err
 	}
-	return &dto.LoginResponse{
-		AccessToken: token,
-		ExpiresAt:   exp.Unix(),
-		User:        toUserProfile(user),
-		Tenant:      *tenant,
-		Permissions: perms,
-		Tenants:     toTenantBriefs(tenants),
-	}, nil
+	return accessToken, refreshToken, exp, nil
 }
 
 func (s *AuthService) Me(claims *jwtmgr.Claims) (*dto.MeResponse, error) {

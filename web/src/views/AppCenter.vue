@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { fetchApps, saveAppOrder, type AppItem } from '../api/auth'
-import { getToken } from '../utils/token'
+import { getToken, getRefreshToken } from '../utils/token'
 import { buildAppLaunchUrl } from '../utils/appUrl'
 
 const router = useRouter()
@@ -75,7 +75,7 @@ function openApp(app: AppItem) {
     router.push('/login')
     return
   }
-  window.location.href = buildAppLaunchUrl(app.url, token)
+  window.location.href = buildAppLaunchUrl(app.url, token, getRefreshToken())
 }
 
 function onDragStart(index: number, e: DragEvent) {

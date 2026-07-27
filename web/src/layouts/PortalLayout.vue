@@ -8,6 +8,7 @@ import { switchTenant } from '../api/auth'
 import { useAuthStore } from '../stores/auth'
 import { hasPerm } from '../utils/token'
 import { logoutFromApps } from '../utils/logout'
+import { startTokenKeepAlive } from '../utils/tokenKeepAlive'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
@@ -44,6 +45,7 @@ function navTo(path: string) {
 }
 
 onMounted(() => {
+  startTokenKeepAlive()
   void auth.refreshSession().catch(() => {})
 })
 </script>

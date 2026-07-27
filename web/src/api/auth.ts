@@ -23,10 +23,17 @@ export interface UserProfile {
 export interface LoginResponse {
   accessToken: string
   expiresAt: number
+  refreshToken?: string
   user: UserProfile
   tenant: TenantBrief
   permissions: string[]
   tenants?: TenantBrief[]
+}
+
+export interface RefreshResponse {
+  accessToken: string
+  expiresAt: number
+  refreshToken: string
 }
 
 export interface MeResponse {
@@ -49,6 +56,11 @@ export interface AppItem {
 export async function login(data: LoginRequest) {
   const res = await client.post('/auth/login', data)
   return unwrap<LoginResponse>(res)
+}
+
+export async function refreshAccessToken(refreshToken: string) {
+  const res = await client.post('/auth/refresh', { refreshToken })
+  return unwrap<RefreshResponse>(res)
 }
 
 export async function fetchMe() {

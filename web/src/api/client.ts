@@ -1,7 +1,7 @@
 import axios from 'axios'
-import type { AxiosInstance } from 'axios'
+import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios'
 import { getToken } from '../utils/token'
-import { handleUnauthorized } from '../utils/authSession'
+import { handleUnauthorized, tryRefreshAccessToken } from '../utils/authSession'
 
 export interface ApiResponse<T = unknown> {
   code: number
@@ -30,10 +30,28 @@ client.interceptors.request.use((config) => {
   return config
 })
 
+async function retryAfterRefresh(config: InternalAxiosRequestConfig) {
+  const ok = await tryRefreshAccessToken()
+  if (!ok) {
+    handleUnauthorized()
+    return Promise.reject(new Error('登录已过期，请重新登录'))
+  }
+  const token = getToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  ;(config as InternalAxiosRequestConfig & { _retry?: boolean })._retry = true
+  return client.request(config)
+}
+
 client.interceptors.response.use(
-  (res) => {
+  async (res) => {
     const body = res.data as ApiResponse
     if (body.code === 401) {
+      const cfg = res.config as InternalAxiosRequestConfig & { _retry?: boolean }
+      if (!cfg._retry && !String(cfg.url || '').includes('/auth/refresh')) {
+        return retryAfterRefresh(cfg)
+      }
       handleUnauthorized()
       return Promise.reject(new Error(body.message || '登录已过期，请重新登录'))
     }
@@ -42,7 +60,11 @@ client.interceptors.response.use(
     }
     return res
   },
-  (err) => {
+  async (err) => {
+    const cfg = err.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined
+    if (err.response?.status === 401 && cfg && !cfg._retry && !String(cfg.url || '').includes('/auth/refresh')) {
+      return retryAfterRefresh(cfg)
+    }
     if (err.response?.status === 401) {
       handleUnauthorized()
       const body = err.response.data as ApiResponse | undefined

@@ -47,6 +47,24 @@ func (h *Handler) Login(c *gin.Context) {
 	response.OK(c, resp)
 }
 
+func (h *Handler) Refresh(c *gin.Context) {
+	var req dto.RefreshRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	resp, err := h.auth.Refresh(req.RefreshToken)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidRefresh) || errors.Is(err, service.ErrUserDisabled) || errors.Is(err, service.ErrTenantForbidden) {
+			response.Fail(c, http.StatusUnauthorized, err.Error())
+			return
+		}
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	response.OK(c, resp)
+}
+
 func (h *Handler) SwitchTenant(c *gin.Context) {
 	var req dto.SwitchTenantRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

@@ -8,9 +8,12 @@ export function appBaseUrl(appUrl: string): string {
 }
 
 /** 带 JWT 进入子应用的完整地址 */
-export function buildAppLaunchUrl(appUrl: string, token: string): string {
+export function buildAppLaunchUrl(appUrl: string, token: string, refreshToken?: string): string {
   const url = new URL(`${appBaseUrl(appUrl)}/auth/callback`)
   url.searchParams.set('token', token)
+  if (refreshToken) {
+    url.searchParams.set('refresh', refreshToken)
+  }
   return url.toString()
 }
 

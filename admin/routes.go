@@ -8,6 +8,7 @@ import (
 
 func RegisterRoutes(g *gin.RouterGroup, h *Handler, jwtAuth gin.HandlerFunc) {
 	g.POST("/auth/login", h.Login)
+	g.POST("/auth/refresh", h.Refresh)
 
 	auth := g.Group("")
 	auth.Use(jwtAuth)
