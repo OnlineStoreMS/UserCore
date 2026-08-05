@@ -14,16 +14,22 @@ var builtinRoleExtraPerms = map[string][]string{
 		"store:read", "store:write", "storesync:read", "storesync:write",
 		"warehouse:read", "warehouse:write", "order:read", "order:write",
 		"material:read", "material:write", "todo:read", "todo:write",
+		"self:read", "self:write",
 	},
 	"tenant_operator": {
 		"store:read", "store:write", "storesync:read", "storesync:write",
 		"warehouse:read", "warehouse:write", "order:read", "order:write",
 		"material:read", "material:write", "todo:read", "todo:write",
+		"self:read", "self:write",
 	},
-	"tenant_viewer": {"store:read", "storesync:read", "warehouse:read", "order:read", "material:read", "todo:read"},
+	"tenant_viewer": {
+		"store:read", "storesync:read", "warehouse:read", "order:read",
+		"material:read", "todo:read", "self:read",
+	},
 	"platform_admin": {
 		"warehouse:read", "warehouse:write", "order:read", "order:write",
 		"material:read", "material:write", "todo:read", "todo:write",
+		"self:read", "self:write",
 	},
 }
 

@@ -38,6 +38,8 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 		{Code: "material:write", Name: "编辑素材中心", AppCode: "materialcore"},
 		{Code: "todo:read", Name: "查看待办中心", AppCode: "todocenter"},
 		{Code: "todo:write", Name: "编辑待办中心", AppCode: "todocenter"},
+		{Code: "self:read", Name: "查看自营中心", AppCode: "selfcore"},
+		{Code: "self:write", Name: "编辑自营中心", AppCode: "selfcore"},
 	}
 	if err := r.Role.EnsurePermissions(perms); err != nil {
 		log.Printf("ensure app permissions: %v", err)
@@ -62,6 +64,12 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 			Description: "供应商管理（VMS）与采购管理（PMS），维护 SKU 供货报价与采购跟单",
 			Icon: "ShoppingCart", URL: defaultURL(apps.SupplyCoreURL, "http://localhost:5175"),
 			Sort: 90, Enabled: 1, RequiredPerm: "supply:read",
+		},
+		{
+			Code: "selfcore", Name: "自营中心",
+			Description: "自营订单与分销管理：分销商档案、批发价、分销订单、收款与物流（供应链方向反转）",
+			Icon: "Sell", URL: defaultURL(apps.SelfCoreURL, "http://localhost:5187"),
+			Sort: 92, Enabled: 1, RequiredPerm: "self:read",
 		},
 		{
 			Code: "aftersalescore", Name: "售后中心",
@@ -126,7 +134,7 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 			return
 		}
 	}
-	log.Println("apps ensured: productcore, ordercore, supplycore, aftersalescore, mallcore, storecore, storesyncagent, shippingcore, warehousecore, customercore, materialcore")
+	log.Println("apps ensured: productcore, ordercore, supplycore, selfcore, aftersalescore, mallcore, storecore, storesyncagent, shippingcore, warehousecore, customercore, materialcore, todocenter")
 }
 
 func defaultURL(cfg, fallback string) string {

@@ -49,6 +49,7 @@ type AppsConfig struct {
 	MallCoreURL         string `mapstructure:"mallcore_url"`
 	MaterialCoreURL     string `mapstructure:"materialcore_url"`
 	TodoCenterURL       string `mapstructure:"todocenter_url"`
+	SelfCoreURL         string `mapstructure:"selfcore_url"`
 }
 
 func Load(path string) (*Config, error) {
@@ -116,6 +117,9 @@ func Load(path string) (*Config, error) {
 	}
 	if cfg.Apps.TodoCenterURL == "" {
 		cfg.Apps.TodoCenterURL = "http://localhost:5186"
+	}
+	if cfg.Apps.SelfCoreURL == "" {
+		cfg.Apps.SelfCoreURL = "http://localhost:5187"
 	}
 	if len(cfg.CORS.AllowOrigins) == 0 {
 		cfg.CORS.AllowOrigins = []string{
