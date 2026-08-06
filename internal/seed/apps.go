@@ -67,7 +67,7 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 		},
 		{
 			Code: "selfcore", Name: "自营中心",
-			Description: "自营订单与分销管理：分销商档案、批发价、分销订单、收款与物流（供应链方向反转）",
+			Description: "自营订单统计，本地发货回传与仓储扣库；并管理分销商、批发价与分销订单",
 			Icon: "Sell", URL: defaultURL(apps.SelfCoreURL, "http://localhost:5187"),
 			Sort: 92, Enabled: 1, RequiredPerm: "self:read",
 		},
