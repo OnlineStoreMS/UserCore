@@ -4,7 +4,7 @@ import { clearAuth, loadAuth } from '../utils/token'
 import { isAuthExpired, tryRefreshAccessToken } from '../utils/authSession'
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/login', name: 'Login', component: () => import('../views/Login.vue'), meta: { public: true } },
     {
