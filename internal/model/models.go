@@ -132,3 +132,32 @@ type AppTenantGrant struct {
 }
 
 func (AppTenantGrant) TableName() string { return "app_tenant_grants" }
+
+// SSOAuthCode 门户/跨应用跳转用的一次性授权码（仅存 hash）
+type SSOAuthCode struct {
+	ID          uint64     `gorm:"primaryKey;autoIncrement" json:"id"`
+	CodeHash    string     `gorm:"size:64;uniqueIndex;not null" json:"-"`
+	UserID      uint64     `gorm:"index;not null" json:"userId"`
+	TenantID    uint64     `gorm:"index;not null" json:"tenantId"`
+	AppCode     string     `gorm:"size:32;not null" json:"appCode"`
+	RedirectURI string     `gorm:"size:512;not null" json:"redirectUri"`
+	ExpiresAt   time.Time  `gorm:"index;not null" json:"expiresAt"`
+	UsedAt      *time.Time `json:"usedAt"`
+	CreatedAt   time.Time  `json:"createdAt"`
+}
+
+func (SSOAuthCode) TableName() string { return "sso_auth_codes" }
+
+// RefreshSession 服务端 refresh 会话（jti_hash），支持旋转与吊销
+type RefreshSession struct {
+	ID         uint64     `gorm:"primaryKey;autoIncrement" json:"id"`
+	JTIHash    string     `gorm:"size:64;uniqueIndex;not null" json:"-"`
+	UserID     uint64     `gorm:"index;not null" json:"userId"`
+	TenantID   uint64     `gorm:"index;not null" json:"tenantId"`
+	ExpiresAt  time.Time  `gorm:"index;not null" json:"expiresAt"`
+	RevokedAt  *time.Time `json:"revokedAt"`
+	ReplacedBy *uint64    `json:"replacedBy"`
+	CreatedAt  time.Time  `json:"createdAt"`
+}
+
+func (RefreshSession) TableName() string { return "refresh_sessions" }

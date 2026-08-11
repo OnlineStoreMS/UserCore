@@ -4,8 +4,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { fetchApps, saveAppOrder, type AppItem } from '../api/auth'
-import { getToken, getRefreshToken } from '../utils/token'
-import { buildAppLaunchUrl } from '../utils/appUrl'
+import { getToken, loadAuth } from '../utils/token'
 
 const router = useRouter()
 const apps = ref<AppItem[]>([])
@@ -65,17 +64,17 @@ async function persistOrder() {
   }
 }
 
-function openApp(app: AppItem) {
+async function openApp(app: AppItem) {
   if (dragged.value) {
     dragged.value = false
     return
   }
-  const token = getToken()
-  if (!token) {
+  // Cookie SSO：共享父域下直接跳转，凭 httpOnly cookie 进入子应用
+  if (!loadAuth() && !getToken()) {
     router.push('/login')
     return
   }
-  window.location.href = buildAppLaunchUrl(app.url, token, getRefreshToken())
+  window.location.href = app.url.replace(/\/$/, '') + '/'
 }
 
 function onDragStart(index: number, e: DragEvent) {

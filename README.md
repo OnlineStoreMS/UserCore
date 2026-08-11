@@ -59,6 +59,9 @@ cd web && npm install && npm run dev
 | 审计日志 | 关键 IAM 操作留痕 | 待做 |
 
 
-1. 在 `applications` 表注册应用（seed 已含 `productcore`）
-2. 子应用前端从 URL 接收 `?token=` 写入 `localStorage`（key: `uc_access_token`）
-3. 子应用 API 验证同一 JWT secret，从 claims 读取 `tid`（tenant_id）
+1. 在 `applications` 表注册应用（seed 已含各 Core）
+2. **统一父域 + Cookie SSO（推荐）**：登录签发 httpOnly `uc_access` / `uc_refresh`（`Domain=.osms.example.com`）；应用中心直链进入子应用；`POST /auth/logout` 吊销 refresh 并清 Cookie
+3. **过渡**：Authorization Code（`POST /auth/sso/authorize` → `/auth/callback?code=` → `POST /auth/sso/token`）仍可用
+4. 子应用 API 校验同一 JWT secret（Bearer **或** Cookie `uc_access`），从 claims 读取 `tid`
+
+Refresh：服务端 `refresh_sessions` 表存 jti_hash，旋转签发；access 默认 TTL 30 分钟。

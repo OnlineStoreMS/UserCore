@@ -8,8 +8,12 @@ database:
 
 jwt:
   secret: "change-me-in-production-use-long-random-string"
-  access_ttl_minutes: 120
+  access_ttl_minutes: 30
   refresh_ttl_hours: 168
+  sso_code_ttl_seconds: 60
+  cookie_domain: ""
+  cookie_secure: false
+  cookie_samesite: Lax
 
 cors:
   allow_origins:

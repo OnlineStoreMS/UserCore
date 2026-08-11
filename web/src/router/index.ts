@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import PortalLayout from '../layouts/PortalLayout.vue'
-import { clearAuth, getToken, loadAuth } from '../utils/token'
+import { clearAuth, loadAuth } from '../utils/token'
 import { isAuthExpired, tryRefreshAccessToken } from '../utils/authSession'
 
 const router = createRouter({
@@ -24,11 +24,15 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   if (to.meta.public) return true
-  const token = getToken()
-  if (!token) {
-    return { path: '/login', query: { redirect: to.fullPath } }
+  let auth = loadAuth()
+  if (!auth) {
+    // 仅有 cookie、本地 profile 被清时，尝试 refresh 探测会话
+    const ok = await tryRefreshAccessToken()
+    if (!ok) {
+      return { path: '/login', query: { redirect: to.fullPath } }
+    }
+    auth = loadAuth()
   }
-  const auth = loadAuth()
   if (isAuthExpired(auth?.expiresAt)) {
     const ok = await tryRefreshAccessToken()
     if (!ok) {

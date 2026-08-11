@@ -20,9 +20,11 @@ const client: AxiosInstance = axios.create({
   baseURL: '/api/v1',
   timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 })
 
 client.interceptors.request.use((config) => {
+  // Cookie SSO：凭 httpOnly uc_access；过渡期若仍有 Bearer 可读则附带
   const token = getToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`

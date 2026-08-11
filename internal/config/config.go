@@ -27,9 +27,13 @@ type DatabaseConfig struct {
 }
 
 type JWTConfig struct {
-	Secret           string `mapstructure:"secret"`
-	AccessTTLMinutes int    `mapstructure:"access_ttl_minutes"`
-	RefreshTTLHours  int    `mapstructure:"refresh_ttl_hours"`
+	Secret            string `mapstructure:"secret"`
+	AccessTTLMinutes  int    `mapstructure:"access_ttl_minutes"`
+	RefreshTTLHours   int    `mapstructure:"refresh_ttl_hours"`
+	SSOCodeTTLSeconds int    `mapstructure:"sso_code_ttl_seconds"`
+	CookieDomain      string `mapstructure:"cookie_domain"`
+	CookieSecure      bool   `mapstructure:"cookie_secure"`
+	CookieSameSite    string `mapstructure:"cookie_samesite"`
 }
 
 type CORSConfig struct {
@@ -77,10 +81,16 @@ func Load(path string) (*Config, error) {
 		cfg.JWT.Secret = "dev-jwt-secret-change-in-production"
 	}
 	if cfg.JWT.AccessTTLMinutes == 0 {
-		cfg.JWT.AccessTTLMinutes = 120
+		cfg.JWT.AccessTTLMinutes = 30
 	}
 	if cfg.JWT.RefreshTTLHours == 0 {
 		cfg.JWT.RefreshTTLHours = 168
+	}
+	if cfg.JWT.SSOCodeTTLSeconds == 0 {
+		cfg.JWT.SSOCodeTTLSeconds = 60
+	}
+	if cfg.JWT.CookieSameSite == "" {
+		cfg.JWT.CookieSameSite = "Lax"
 	}
 	if cfg.Apps.ProductCoreURL == "" {
 		cfg.Apps.ProductCoreURL = "http://localhost:5173"

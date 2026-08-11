@@ -17,13 +17,30 @@ type LoginResponse struct {
 }
 
 type RefreshRequest struct {
-	RefreshToken string `json:"refreshToken" binding:"required"`
+	RefreshToken string `json:"refreshToken"`
 }
 
 type RefreshResponse struct {
 	AccessToken  string `json:"accessToken"`
 	ExpiresAt    int64  `json:"expiresAt"`
 	RefreshToken string `json:"refreshToken"`
+}
+
+// SSOAuthorizeRequest 签发一次性 SSO code；appCode 与 redirectUri 至少一个。
+type SSOAuthorizeRequest struct {
+	AppCode     string `json:"appCode"`
+	RedirectURI string `json:"redirectUri"`
+}
+
+type SSOAuthorizeResponse struct {
+	Code        string `json:"code"`
+	ExpiresIn   int    `json:"expiresIn"`
+	RedirectURI string `json:"redirectUri"`
+}
+
+type SSOTokenRequest struct {
+	Code        string `json:"code" binding:"required"`
+	RedirectURI string `json:"redirectUri" binding:"required"`
 }
 
 type UserProfileDTO struct {

@@ -1,8 +1,7 @@
-const TOKEN_KEY = 'uc_access_token'
-const REFRESH_KEY = 'uc_refresh_token'
 const AUTH_KEY = 'uc_auth_profile'
 
 export interface StoredAuth {
+  /** @deprecated cookie SSO — kept empty for profile-only storage */
   accessToken: string
   refreshToken?: string
   expiresAt: number
@@ -12,32 +11,30 @@ export interface StoredAuth {
   tenants: { id: number; companyId: number; name: string; code: string }[]
 }
 
+/** httpOnly Cookie 会话：JS 不可读 access/refresh */
 export function getToken(): string | undefined {
-  return localStorage.getItem(TOKEN_KEY) || undefined
+  return undefined
 }
 
 export function getRefreshToken(): string | undefined {
-  return localStorage.getItem(REFRESH_KEY) || undefined
+  return undefined
 }
 
 export function saveAuth(auth: StoredAuth) {
-  localStorage.setItem(TOKEN_KEY, auth.accessToken)
-  localStorage.setItem(AUTH_KEY, JSON.stringify(auth))
-  if (auth.refreshToken) {
-    localStorage.setItem(REFRESH_KEY, auth.refreshToken)
+  const profile: StoredAuth = {
+    ...auth,
+    accessToken: '',
+    refreshToken: undefined,
   }
+  localStorage.setItem(AUTH_KEY, JSON.stringify(profile))
 }
 
-export function updateTokens(accessToken: string, expiresAt: number, refreshToken?: string) {
-  localStorage.setItem(TOKEN_KEY, accessToken)
-  if (refreshToken) {
-    localStorage.setItem(REFRESH_KEY, refreshToken)
-  }
+export function updateTokens(_accessToken: string, expiresAt: number, _refreshToken?: string) {
   const current = loadAuth()
   if (current) {
-    current.accessToken = accessToken
     current.expiresAt = expiresAt
-    if (refreshToken) current.refreshToken = refreshToken
+    current.accessToken = ''
+    current.refreshToken = undefined
     localStorage.setItem(AUTH_KEY, JSON.stringify(current))
   }
 }
@@ -47,9 +44,8 @@ export function loadAuth(): StoredAuth | null {
   if (!raw) return null
   try {
     const auth = JSON.parse(raw) as StoredAuth
-    if (!auth.refreshToken) {
-      auth.refreshToken = getRefreshToken()
-    }
+    auth.accessToken = ''
+    auth.refreshToken = undefined
     return auth
   } catch {
     return null
@@ -57,9 +53,10 @@ export function loadAuth(): StoredAuth | null {
 }
 
 export function clearAuth() {
-  localStorage.removeItem(TOKEN_KEY)
-  localStorage.removeItem(REFRESH_KEY)
   localStorage.removeItem(AUTH_KEY)
+  // legacy keys
+  localStorage.removeItem('uc_access_token')
+  localStorage.removeItem('uc_refresh_token')
 }
 
 export function hasPerm(perms: string[] | undefined, code: string): boolean {

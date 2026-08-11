@@ -1,4 +1,4 @@
-import { clearAuth, getRefreshToken, updateTokens } from './token'
+import { clearAuth, updateTokens } from './token'
 
 let handlingUnauthorized = false
 let refreshPromise: Promise<boolean> | null = null
@@ -25,19 +25,18 @@ export function shouldRefreshSoon(expiresAt?: number, thresholdMs = 5 * 60 * 100
 }
 
 /**
- * 用 refreshToken 换新 accessToken。并发调用会复用同一次请求。
- * 成功返回 true；无 refresh / 失败返回 false（不自动跳登录）。
+ * Cookie 会话静默续期（凭 uc_refresh httpOnly cookie）。
+ * 并发调用复用同一次请求。
  */
 export async function tryRefreshAccessToken(): Promise<boolean> {
   if (refreshPromise) return refreshPromise
   refreshPromise = (async () => {
-    const refreshToken = getRefreshToken()
-    if (!refreshToken) return false
     try {
       const res = await fetch('/api/v1/auth/refresh', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
+        body: JSON.stringify({}),
       })
       const body = await res.json()
       if (body.code !== 200 || !body.data?.accessToken) return false
@@ -50,4 +49,17 @@ export async function tryRefreshAccessToken(): Promise<boolean> {
     }
   })()
   return refreshPromise
+}
+
+export async function logoutOnServer() {
+  try {
+    await fetch('/api/v1/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+  } catch {
+    // ignore
+  }
 }

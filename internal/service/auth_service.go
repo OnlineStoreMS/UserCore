@@ -1,6 +1,10 @@
 package service
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"sort"
 	"strings"
@@ -22,16 +26,24 @@ var (
 	ErrTenantForbidden    = errors.New("无权访问该租户")
 	ErrTenantRequired     = errors.New("请选择租户")
 	ErrInvalidRefresh     = errors.New("刷新凭证无效或已过期，请重新登录")
+	ErrSSOAppForbidden    = errors.New("无权进入该应用")
+	ErrInvalidSSOCode     = errors.New("授权码无效或已过期")
+	ErrSSORequestInvalid  = errors.New("请指定 appCode 或 redirectUri")
 )
 
 type AuthService struct {
-	repos  *repo.Repos
-	jwt    *jwtmgr.Manager
-	appCfg *config.AppsConfig
+	repos      *repo.Repos
+	jwt        *jwtmgr.Manager
+	appCfg     *config.AppsConfig
+	ssoCodeTTL time.Duration
 }
 
-func NewAuthService(repos *repo.Repos, jwt *jwtmgr.Manager, appCfg *config.AppsConfig) *AuthService {
-	return &AuthService{repos: repos, jwt: jwt, appCfg: appCfg}
+func NewAuthService(repos *repo.Repos, jwt *jwtmgr.Manager, appCfg *config.AppsConfig, ssoCodeTTLSeconds int) *AuthService {
+	ttl := time.Duration(ssoCodeTTLSeconds) * time.Second
+	if ttl <= 0 {
+		ttl = 60 * time.Second
+	}
+	return &AuthService{repos: repos, jwt: jwt, appCfg: appCfg, ssoCodeTTL: ttl}
 }
 
 func (s *AuthService) Login(req dto.LoginRequest) (*dto.LoginResponse, error) {
@@ -120,6 +132,15 @@ func (s *AuthService) Refresh(refreshToken string) (*dto.RefreshResponse, error)
 	if err != nil {
 		return nil, ErrInvalidRefresh
 	}
+	if claims.ID == "" {
+		return nil, ErrInvalidRefresh
+	}
+	now := time.Now()
+	sess, err := s.repos.App.GetRefreshSessionByJTIHash(hashSSOCode(claims.ID))
+	if err != nil || sess.RevokedAt != nil || !sess.ExpiresAt.After(now) {
+		// reuse detection: revoked+replaced → invalidate family by revoking... simplified: just reject
+		return nil, ErrInvalidRefresh
+	}
 	user, err := s.repos.User.GetByID(claims.UserID)
 	if err != nil {
 		return nil, ErrInvalidRefresh
@@ -131,7 +152,7 @@ func (s *AuthService) Refresh(refreshToken string) (*dto.RefreshResponse, error)
 	if err != nil {
 		return nil, ErrInvalidRefresh
 	}
-	access, refresh, exp, err := s.issueTokenPair(user, tenant, perms, user.IsPlatform == 1)
+	access, refresh, exp, err := s.issueTokenPairRotating(user, tenant, perms, user.IsPlatform == 1, claims.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -142,11 +163,33 @@ func (s *AuthService) Refresh(refreshToken string) (*dto.RefreshResponse, error)
 	}, nil
 }
 
+func (s *AuthService) Logout(refreshToken string) error {
+	if refreshToken == "" {
+		return nil
+	}
+	claims, err := s.jwt.ParseRefresh(refreshToken)
+	if err != nil || claims.ID == "" {
+		return nil
+	}
+	_ = s.repos.App.RevokeRefreshSessionByJTIHash(hashSSOCode(claims.ID), time.Now())
+	return nil
+}
+
 func (s *AuthService) issueTokenPair(
 	user *model.User,
 	tenant *dto.TenantBriefDTO,
 	perms []string,
 	isPlatform bool,
+) (accessToken, refreshToken string, exp time.Time, err error) {
+	return s.issueTokenPairRotating(user, tenant, perms, isPlatform, "")
+}
+
+func (s *AuthService) issueTokenPairRotating(
+	user *model.User,
+	tenant *dto.TenantBriefDTO,
+	perms []string,
+	isPlatform bool,
+	oldRefreshJTI string,
 ) (accessToken, refreshToken string, exp time.Time, err error) {
 	accessToken, exp, err = s.jwt.IssueAccess(jwtmgr.Claims{
 		UserID:      user.ID,
@@ -160,9 +203,27 @@ func (s *AuthService) issueTokenPair(
 	if err != nil {
 		return "", "", time.Time{}, err
 	}
-	refreshToken, _, err = s.jwt.IssueRefresh(user.ID, tenant.ID)
+	var jti string
+	refreshToken, jti, refreshExp, err := s.jwt.IssueRefresh(user.ID, tenant.ID)
 	if err != nil {
 		return "", "", time.Time{}, err
+	}
+	now := time.Now()
+	next := &model.RefreshSession{
+		JTIHash:   hashSSOCode(jti),
+		UserID:    user.ID,
+		TenantID:  tenant.ID,
+		ExpiresAt: refreshExp,
+		CreatedAt: now,
+	}
+	if oldRefreshJTI != "" {
+		if err := s.repos.App.RotateRefreshSession(hashSSOCode(oldRefreshJTI), next, now); err != nil {
+			return "", "", time.Time{}, ErrInvalidRefresh
+		}
+	} else {
+		if err := s.repos.App.CreateRefreshSession(next); err != nil {
+			return "", "", time.Time{}, err
+		}
 	}
 	return accessToken, refreshToken, exp, nil
 }
@@ -330,8 +391,139 @@ func (s *AuthService) resolveAppURL(app model.Application) string {
 		if s.appCfg.StoreSyncAgentURL != "" {
 			return s.appCfg.StoreSyncAgentURL
 		}
+	case "materialcore":
+		if s.appCfg.MaterialCoreURL != "" {
+			return s.appCfg.MaterialCoreURL
+		}
+	case "todocenter":
+		if s.appCfg.TodoCenterURL != "" {
+			return s.appCfg.TodoCenterURL
+		}
+	case "selfcore":
+		if s.appCfg.SelfCoreURL != "" {
+			return s.appCfg.SelfCoreURL
+		}
 	}
 	return url
+}
+
+func appBaseURL(appURL string) string {
+	trimmed := strings.TrimRight(strings.TrimSpace(appURL), "/")
+	if strings.HasSuffix(trimmed, "/auth/callback") {
+		return strings.TrimSuffix(trimmed, "/auth/callback")
+	}
+	return trimmed
+}
+
+func appCallbackURL(appURL string) string {
+	return appBaseURL(appURL) + "/auth/callback"
+}
+
+func normalizeRedirectURI(uri string) string {
+	return strings.TrimRight(strings.TrimSpace(uri), "/")
+}
+
+func hashSSOCode(code string) string {
+	sum := sha256.Sum256([]byte(code))
+	return hex.EncodeToString(sum[:])
+}
+
+func generateSSOCode() (string, error) {
+	buf := make([]byte, 32)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(buf), nil
+}
+
+// AuthorizeSSO 为当前会话签发一次性授权码，供子应用 /auth/callback 换票。
+func (s *AuthService) AuthorizeSSO(claims *jwtmgr.Claims, req dto.SSOAuthorizeRequest) (*dto.SSOAuthorizeResponse, error) {
+	if claims == nil || claims.UserID == 0 || claims.TenantID == 0 {
+		return nil, ErrInvalidCredentials
+	}
+	appCode := strings.TrimSpace(req.AppCode)
+	redirectURI := normalizeRedirectURI(req.RedirectURI)
+	if appCode == "" && redirectURI == "" {
+		return nil, ErrSSORequestInvalid
+	}
+
+	allowed, err := s.ListApps(claims)
+	if err != nil {
+		return nil, err
+	}
+	var target *dto.AppDTO
+	for i := range allowed {
+		a := &allowed[i]
+		callback := normalizeRedirectURI(appCallbackURL(a.URL))
+		if appCode != "" && a.Code == appCode {
+			target = a
+			break
+		}
+		if redirectURI != "" && callback == redirectURI {
+			target = a
+			break
+		}
+	}
+	if target == nil {
+		return nil, ErrSSOAppForbidden
+	}
+	callback := normalizeRedirectURI(appCallbackURL(target.URL))
+
+	plain, err := generateSSOCode()
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now()
+	row := &model.SSOAuthCode{
+		CodeHash:    hashSSOCode(plain),
+		UserID:      claims.UserID,
+		TenantID:    claims.TenantID,
+		AppCode:     target.Code,
+		RedirectURI: callback,
+		ExpiresAt:   now.Add(s.ssoCodeTTL),
+		CreatedAt:   now,
+	}
+	if err := s.repos.App.CreateSSOAuthCode(row); err != nil {
+		return nil, err
+	}
+	return &dto.SSOAuthorizeResponse{
+		Code:        plain,
+		ExpiresIn:   int(s.ssoCodeTTL.Seconds()),
+		RedirectURI: callback,
+	}, nil
+}
+
+// ExchangeSSOCode 核销一次性 code 并重新签发 access/refresh。
+func (s *AuthService) ExchangeSSOCode(req dto.SSOTokenRequest) (*dto.RefreshResponse, error) {
+	code := strings.TrimSpace(req.Code)
+	redirectURI := normalizeRedirectURI(req.RedirectURI)
+	if code == "" || redirectURI == "" {
+		return nil, ErrInvalidSSOCode
+	}
+	row, err := s.repos.App.ConsumeSSOAuthCode(hashSSOCode(code), redirectURI, time.Now())
+	if err != nil {
+		return nil, ErrInvalidSSOCode
+	}
+	user, err := s.repos.User.GetByID(row.UserID)
+	if err != nil {
+		return nil, ErrInvalidSSOCode
+	}
+	if user.Status != 1 {
+		return nil, ErrInvalidSSOCode
+	}
+	tenant, perms, err := s.issueForTenant(user, row.TenantID)
+	if err != nil {
+		return nil, ErrInvalidSSOCode
+	}
+	access, refresh, exp, err := s.issueTokenPair(user, tenant, perms, user.IsPlatform == 1)
+	if err != nil {
+		return nil, err
+	}
+	return &dto.RefreshResponse{
+		AccessToken:  access,
+		RefreshToken: refresh,
+		ExpiresAt:    exp.Unix(),
+	}, nil
 }
 
 func (s *AuthService) issueForTenant(user *model.User, tenantID uint64) (*dto.TenantBriefDTO, []string, error) {

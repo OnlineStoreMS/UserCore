@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"usercore/admin/middleware"
 	"usercore/internal/dto"
+	"usercore/internal/pkg/authcookie"
 	"usercore/internal/pkg/response"
 	"usercore/internal/service"
 
@@ -19,10 +21,22 @@ type Handler struct {
 	roles     *service.RoleService
 	tenants   *service.TenantService
 	companies *service.CompanyService
+	cookies   authcookie.Config
 }
 
-func NewHandler(auth *service.AuthService, users *service.UserService, roles *service.RoleService, tenants *service.TenantService, companies *service.CompanyService) *Handler {
-	return &Handler{auth: auth, users: users, roles: roles, tenants: tenants, companies: companies}
+func NewHandler(
+	auth *service.AuthService,
+	users *service.UserService,
+	roles *service.RoleService,
+	tenants *service.TenantService,
+	companies *service.CompanyService,
+	cookies authcookie.Config,
+) *Handler {
+	return &Handler{auth: auth, users: users, roles: roles, tenants: tenants, companies: companies, cookies: cookies}
+}
+
+func (h *Handler) setAuthCookies(c *gin.Context, access, refresh string) {
+	h.cookies.SetTokens(c.Writer, access, refresh)
 }
 
 func (h *Handler) Login(c *gin.Context) {
@@ -44,16 +58,22 @@ func (h *Handler) Login(c *gin.Context) {
 		response.OK(c, resp)
 		return
 	}
+	h.setAuthCookies(c, resp.AccessToken, resp.RefreshToken)
 	response.OK(c, resp)
 }
 
 func (h *Handler) Refresh(c *gin.Context) {
 	var req dto.RefreshRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, http.StatusBadRequest, err.Error())
+	_ = c.ShouldBindJSON(&req)
+	refreshToken := strings.TrimSpace(req.RefreshToken)
+	if refreshToken == "" {
+		refreshToken = authcookie.RefreshToken(c.Request)
+	}
+	if refreshToken == "" {
+		response.Fail(c, http.StatusBadRequest, "refreshToken required")
 		return
 	}
-	resp, err := h.auth.Refresh(req.RefreshToken)
+	resp, err := h.auth.Refresh(refreshToken)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidRefresh) || errors.Is(err, service.ErrUserDisabled) || errors.Is(err, service.ErrTenantForbidden) {
 			response.Fail(c, http.StatusUnauthorized, err.Error())
@@ -62,6 +82,62 @@ func (h *Handler) Refresh(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, err.Error())
 		return
 	}
+	h.setAuthCookies(c, resp.AccessToken, resp.RefreshToken)
+	response.OK(c, resp)
+}
+
+func (h *Handler) Logout(c *gin.Context) {
+	refreshToken := authcookie.RefreshToken(c.Request)
+	var req struct {
+		RefreshToken string `json:"refreshToken"`
+	}
+	_ = c.ShouldBindJSON(&req)
+	if refreshToken == "" {
+		refreshToken = strings.TrimSpace(req.RefreshToken)
+	}
+	_ = h.auth.Logout(refreshToken)
+	h.cookies.Clear(c.Writer)
+	response.OK(c, gin.H{"ok": true})
+}
+
+func (h *Handler) SSOAuthorize(c *gin.Context) {
+	var req dto.SSOAuthorizeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	resp, err := h.auth.AuthorizeSSO(middleware.Claims(c), req)
+	if err != nil {
+		if errors.Is(err, service.ErrSSOAppForbidden) {
+			response.Fail(c, http.StatusForbidden, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrSSORequestInvalid) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	response.OK(c, resp)
+}
+
+func (h *Handler) SSOToken(c *gin.Context) {
+	var req dto.SSOTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	resp, err := h.auth.ExchangeSSOCode(req)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidSSOCode) {
+			response.Fail(c, http.StatusUnauthorized, err.Error())
+			return
+		}
+		response.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	h.setAuthCookies(c, resp.AccessToken, resp.RefreshToken)
 	response.OK(c, resp)
 }
 
@@ -77,6 +153,7 @@ func (h *Handler) SwitchTenant(c *gin.Context) {
 		response.Fail(c, http.StatusForbidden, err.Error())
 		return
 	}
+	h.setAuthCookies(c, resp.AccessToken, resp.RefreshToken)
 	response.OK(c, resp)
 }
 

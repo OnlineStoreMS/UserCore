@@ -45,5 +45,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&model.Application{},
 		&model.UserAppOrder{},
 		&model.AppTenantGrant{},
+		&model.SSOAuthCode{},
+		&model.RefreshSession{},
 	)
 }

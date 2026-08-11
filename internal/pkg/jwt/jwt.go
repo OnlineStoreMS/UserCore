@@ -1,6 +1,8 @@
 package jwt
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"time"
 
@@ -58,22 +60,35 @@ func (m *Manager) IssueAccess(claims Claims) (string, time.Time, error) {
 	return s, exp, err
 }
 
-func (m *Manager) IssueRefresh(userID, tenantID uint64) (string, time.Time, error) {
+func (m *Manager) IssueRefresh(userID, tenantID uint64) (tokenStr string, jti string, exp time.Time, err error) {
 	now := time.Now()
-	exp := now.Add(m.refreshTTL)
+	exp = now.Add(m.refreshTTL)
+	jti, err = randomJTI()
+	if err != nil {
+		return "", "", time.Time{}, err
+	}
 	claims := RefreshClaims{
 		UserID:   userID,
 		TenantID: tenantID,
 		TokenUse: "refresh",
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        jti,
 			Subject:   "refresh",
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(exp),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	s, err := token.SignedString(m.secret)
-	return s, exp, err
+	tokenStr, err = token.SignedString(m.secret)
+	return tokenStr, jti, exp, err
+}
+
+func randomJTI() (string, error) {
+	buf := make([]byte, 16)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(buf), nil
 }
 
 func (m *Manager) ParseAccess(tokenStr string) (*Claims, error) {

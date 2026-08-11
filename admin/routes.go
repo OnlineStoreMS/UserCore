@@ -9,11 +9,14 @@ import (
 func RegisterRoutes(g *gin.RouterGroup, h *Handler, jwtAuth gin.HandlerFunc) {
 	g.POST("/auth/login", h.Login)
 	g.POST("/auth/refresh", h.Refresh)
+	g.POST("/auth/logout", h.Logout)
+	g.POST("/auth/sso/token", h.SSOToken)
 
 	auth := g.Group("")
 	auth.Use(jwtAuth)
 	auth.GET("/auth/me", h.Me)
 	auth.POST("/auth/switch-tenant", h.SwitchTenant)
+	auth.POST("/auth/sso/authorize", h.SSOAuthorize)
 	auth.GET("/apps", h.ListApps)
 	auth.PUT("/apps/order", h.SaveAppOrder)
 	auth.GET("/permissions", h.ListPermissions)

@@ -2,6 +2,7 @@ package repo
 
 import (
 	"errors"
+	"time"
 
 	"usercore/internal/model"
 
@@ -328,6 +329,79 @@ func (r *RoleRepo) EnsurePermissions(perms []model.Permission) error {
 type AppRepo struct{ db *gorm.DB }
 
 func NewAppRepo(db *gorm.DB) *AppRepo { return &AppRepo{db: db} }
+
+func (r *AppRepo) GetByCode(code string) (*model.Application, error) {
+	var app model.Application
+	err := r.db.Where("code = ? AND enabled = 1", code).First(&app).Error
+	return &app, err
+}
+
+func (r *AppRepo) CreateSSOAuthCode(row *model.SSOAuthCode) error {
+	return r.db.Create(row).Error
+}
+
+// ConsumeSSOAuthCode 原子核销未使用且未过期的 code；redirectURI 必须一致。
+func (r *AppRepo) ConsumeSSOAuthCode(codeHash, redirectURI string, now time.Time) (*model.SSOAuthCode, error) {
+	var row model.SSOAuthCode
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		res := tx.Model(&model.SSOAuthCode{}).
+			Where("code_hash = ? AND redirect_uri = ? AND used_at IS NULL AND expires_at > ?", codeHash, redirectURI, now).
+			Update("used_at", now)
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return tx.Where("code_hash = ?", codeHash).First(&row).Error
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &row, nil
+}
+
+func (r *AppRepo) CreateRefreshSession(row *model.RefreshSession) error {
+	return r.db.Create(row).Error
+}
+
+func (r *AppRepo) GetRefreshSessionByJTIHash(jtiHash string) (*model.RefreshSession, error) {
+	var row model.RefreshSession
+	err := r.db.Where("jti_hash = ?", jtiHash).First(&row).Error
+	return &row, err
+}
+
+// RotateRefreshSession 原子核销旧会话并写入新会话；若旧会话已吊销则返回 ErrRecordNotFound。
+func (r *AppRepo) RotateRefreshSession(oldJTIHash string, next *model.RefreshSession, now time.Time) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var old model.RefreshSession
+		if err := tx.Where("jti_hash = ? AND revoked_at IS NULL AND expires_at > ?", oldJTIHash, now).First(&old).Error; err != nil {
+			return err
+		}
+		if err := tx.Create(next).Error; err != nil {
+			return err
+		}
+		res := tx.Model(&model.RefreshSession{}).
+			Where("id = ? AND revoked_at IS NULL", old.ID).
+			Updates(map[string]interface{}{
+				"revoked_at":  now,
+				"replaced_by": next.ID,
+			})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return nil
+	})
+}
+
+func (r *AppRepo) RevokeRefreshSessionByJTIHash(jtiHash string, now time.Time) error {
+	return r.db.Model(&model.RefreshSession{}).
+		Where("jti_hash = ? AND revoked_at IS NULL", jtiHash).
+		Update("revoked_at", now).Error
+}
 
 func (r *AppRepo) ListEnabled() ([]model.Application, error) {
 	var list []model.Application

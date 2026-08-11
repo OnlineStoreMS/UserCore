@@ -16,7 +16,12 @@ function clearTimer() {
 
 async function renewIfNeeded() {
   const auth = loadAuth()
-  if (!auth?.expiresAt) return
+  if (!auth?.expiresAt) {
+    // 无本地过期时间时仍尝试 cookie 续期（例如仅 cookie 会话）
+    await tryRefreshAccessToken()
+    scheduleNext()
+    return
+  }
   if (isAuthExpired(auth.expiresAt) || shouldRefreshSoon(auth.expiresAt, RENEW_BEFORE_MS)) {
     const ok = await tryRefreshAccessToken()
     if (!ok) return
@@ -27,8 +32,14 @@ async function renewIfNeeded() {
 function scheduleNext() {
   clearTimer()
   const auth = loadAuth()
-  if (!auth?.expiresAt || !auth.refreshToken) return
-  const delay = Math.max(auth.expiresAt * 1000 - Date.now() - RENEW_BEFORE_MS, MIN_DELAY_MS)
+  const exp = auth?.expiresAt
+  if (!exp) {
+    timer = setTimeout(() => {
+      void renewIfNeeded()
+    }, RENEW_BEFORE_MS)
+    return
+  }
+  const delay = Math.max(exp * 1000 - Date.now() - RENEW_BEFORE_MS, MIN_DELAY_MS)
   timer = setTimeout(() => {
     void renewIfNeeded()
   }, delay)

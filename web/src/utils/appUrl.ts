@@ -7,12 +7,18 @@ export function appBaseUrl(appUrl: string): string {
   return trimmed
 }
 
-/** 带 JWT 进入子应用的完整地址 */
-export function buildAppLaunchUrl(appUrl: string, token: string, refreshToken?: string): string {
-  const url = new URL(`${appBaseUrl(appUrl)}/auth/callback`)
-  url.searchParams.set('token', token)
-  if (refreshToken) {
-    url.searchParams.set('refresh', refreshToken)
+/** 用一次性 SSO code 进入子应用（禁止在 URL 中携带 JWT） */
+export function buildAppLaunchUrl(
+  redirectUri: string,
+  code: string,
+  extraQuery?: Record<string, string>,
+): string {
+  const url = new URL(redirectUri)
+  url.searchParams.set('code', code)
+  if (extraQuery) {
+    for (const [k, v] of Object.entries(extraQuery)) {
+      if (v) url.searchParams.set(k, v)
+    }
   }
   return url.toString()
 }

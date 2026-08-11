@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"usercore/internal/pkg/authcookie"
 	jwtmgr "usercore/internal/pkg/jwt"
 	"usercore/internal/pkg/response"
 	"usercore/internal/service"
@@ -17,13 +18,12 @@ const (
 
 func JWTAuth(jwt *jwtmgr.Manager) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		auth := c.GetHeader("Authorization")
-		if !strings.HasPrefix(auth, "Bearer ") {
+		token := bearerOrCookie(c)
+		if token == "" {
 			response.Fail(c, http.StatusUnauthorized, "请先登录")
 			c.Abort()
 			return
 		}
-		token := strings.TrimPrefix(auth, "Bearer ")
 		claims, err := jwt.ParseAccess(token)
 		if err != nil {
 			response.Fail(c, http.StatusUnauthorized, "登录已过期，请重新登录")
@@ -33,6 +33,14 @@ func JWTAuth(jwt *jwtmgr.Manager) gin.HandlerFunc {
 		c.Set(ContextClaims, claims)
 		c.Next()
 	}
+}
+
+func bearerOrCookie(c *gin.Context) string {
+	auth := c.GetHeader("Authorization")
+	if strings.HasPrefix(auth, "Bearer ") {
+		return strings.TrimSpace(strings.TrimPrefix(auth, "Bearer "))
+	}
+	return authcookie.AccessToken(c.Request)
 }
 
 func RequirePerm(code string) gin.HandlerFunc {

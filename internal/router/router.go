@@ -4,6 +4,7 @@ import (
 	"usercore/admin"
 	"usercore/admin/middleware"
 	"usercore/internal/config"
+	"usercore/internal/pkg/authcookie"
 	jwtmgr "usercore/internal/pkg/jwt"
 	"usercore/internal/repo"
 	"usercore/internal/service"
@@ -22,12 +23,19 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 
 	repos := repo.New(db)
 	jwt := jwtmgr.NewManager(cfg.JWT.Secret, cfg.JWT.AccessTTLMinutes, cfg.JWT.RefreshTTLHours)
-	authSvc := service.NewAuthService(repos, jwt, &cfg.Apps)
+	authSvc := service.NewAuthService(repos, jwt, &cfg.Apps, cfg.JWT.SSOCodeTTLSeconds)
 	userSvc := service.NewUserService(repos)
 	roleSvc := service.NewRoleService(repos)
 	tenantSvc := service.NewTenantService(repos)
 	companySvc := service.NewCompanyService(repos)
-	h := admin.NewHandler(authSvc, userSvc, roleSvc, tenantSvc, companySvc)
+	cookies := authcookie.NewConfig(
+		cfg.JWT.CookieDomain,
+		cfg.JWT.CookieSecure,
+		cfg.JWT.CookieSameSite,
+		jwt.AccessTTL(),
+		jwt.RefreshTTL(),
+	)
+	h := admin.NewHandler(authSvc, userSvc, roleSvc, tenantSvc, companySvc, cookies)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "service": "usercore"})
