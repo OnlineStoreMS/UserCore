@@ -60,3 +60,4 @@ apps:
   materialcore_url: "http://localhost:5185"
   todocenter_url: "http://localhost:5186"
   selfcore_url: "http://localhost:5187"
+  opsmobile_url: "http://localhost:5190"

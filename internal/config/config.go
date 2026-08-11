@@ -54,6 +54,7 @@ type AppsConfig struct {
 	MaterialCoreURL     string `mapstructure:"materialcore_url"`
 	TodoCenterURL       string `mapstructure:"todocenter_url"`
 	SelfCoreURL         string `mapstructure:"selfcore_url"`
+	OpsMobileURL        string `mapstructure:"opsmobile_url"`
 }
 
 func Load(path string) (*Config, error) {
@@ -130,6 +131,9 @@ func Load(path string) (*Config, error) {
 	}
 	if cfg.Apps.SelfCoreURL == "" {
 		cfg.Apps.SelfCoreURL = "http://localhost:5187"
+	}
+	if cfg.Apps.OpsMobileURL == "" {
+		cfg.Apps.OpsMobileURL = "http://localhost:5190"
 	}
 	if len(cfg.CORS.AllowOrigins) == 0 {
 		cfg.CORS.AllowOrigins = []string{

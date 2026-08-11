@@ -125,6 +125,12 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 			Icon: "List", URL: defaultURL(apps.TodoCenterURL, "http://localhost:5186"),
 			Sort: 88, Enabled: 1, RequiredPerm: "todo:read",
 		},
+		{
+			Code: "opsmobile", Name: "手机端应用中心",
+			Description: "轻量手机端：手工建单、自营订单、发货待发/已发查询",
+			Icon: "Iphone", URL: defaultURL(apps.OpsMobileURL, "http://localhost:5190"),
+			Sort: 200, Enabled: 1, RequiredPerm: "order:read",
+		},
 	}
 
 	for i := range defs {
@@ -134,7 +140,7 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 			return
 		}
 	}
-	log.Println("apps ensured: productcore, ordercore, supplycore, selfcore, aftersalescore, mallcore, storecore, storesyncagent, shippingcore, warehousecore, customercore, materialcore, todocenter")
+	log.Println("apps ensured: productcore, ordercore, supplycore, selfcore, aftersalescore, mallcore, storecore, storesyncagent, shippingcore, warehousecore, customercore, materialcore, todocenter, opsmobile")
 }
 
 func defaultURL(cfg, fallback string) string {
