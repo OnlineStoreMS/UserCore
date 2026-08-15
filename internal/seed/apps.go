@@ -38,6 +38,8 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 		{Code: "material:write", Name: "编辑素材中心", AppCode: "materialcore"},
 		{Code: "catalog:read", Name: "查看产品中心", AppCode: "catalogcore"},
 		{Code: "catalog:write", Name: "编辑产品中心", AppCode: "catalogcore"},
+		{Code: "quote:read", Name: "查看报价中心", AppCode: "quotecore"},
+		{Code: "quote:write", Name: "编辑报价中心", AppCode: "quotecore"},
 		{Code: "todo:read", Name: "查看待办中心", AppCode: "todocenter"},
 		{Code: "todo:write", Name: "编辑待办中心", AppCode: "todocenter"},
 		{Code: "self:read", Name: "查看自营中心", AppCode: "selfcore"},
@@ -128,6 +130,12 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 			Sort: 86, Enabled: 1, RequiredPerm: "catalog:read",
 		},
 		{
+			Code: "quotecore", Name: "报价中心",
+			Description: "客户选品与手填明细，生成可复制图片 / 下载 PDF 的专业报价单",
+			Icon: "Document", URL: defaultURL(apps.QuoteCoreURL, "http://localhost:5189"),
+			Sort: 87, Enabled: 1, RequiredPerm: "quote:read",
+		},
+		{
 			Code: "todocenter", Name: "待办中心",
 			Description: "统一记录电商、发货、售后、门店等业务待办，支持图片笔记与手机扫码上传",
 			Icon: "List", URL: defaultURL(apps.TodoCenterURL, "http://localhost:5186"),
@@ -148,7 +156,7 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 			return
 		}
 	}
-	log.Println("apps ensured: productcore, ordercore, supplycore, selfcore, aftersalescore, mallcore, storecore, storesyncagent, shippingcore, warehousecore, customercore, materialcore, catalogcore, todocenter, opsmobile")
+	log.Println("apps ensured: productcore, ordercore, supplycore, selfcore, aftersalescore, mallcore, storecore, storesyncagent, shippingcore, warehousecore, customercore, materialcore, catalogcore, quotecore, todocenter, opsmobile")
 }
 
 func defaultURL(cfg, fallback string) string {
