@@ -58,6 +58,7 @@ apps:
   customercore_url: "http://localhost:5183"
   mallcore_url: "http://localhost:5184"
   materialcore_url: "http://localhost:5185"
+  catalogcore_url: "http://localhost:5188"
   todocenter_url: "http://localhost:5186"
   selfcore_url: "http://localhost:5187"
   opsmobile_url: "http://localhost:5190"

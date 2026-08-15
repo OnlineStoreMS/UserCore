@@ -52,6 +52,7 @@ type AppsConfig struct {
 	CustomerCoreURL     string `mapstructure:"customercore_url"`
 	MallCoreURL         string `mapstructure:"mallcore_url"`
 	MaterialCoreURL     string `mapstructure:"materialcore_url"`
+	CatalogCoreURL      string `mapstructure:"catalogcore_url"`
 	TodoCenterURL       string `mapstructure:"todocenter_url"`
 	SelfCoreURL         string `mapstructure:"selfcore_url"`
 	OpsMobileURL        string `mapstructure:"opsmobile_url"`
@@ -125,6 +126,9 @@ func Load(path string) (*Config, error) {
 	}
 	if cfg.Apps.MaterialCoreURL == "" {
 		cfg.Apps.MaterialCoreURL = "http://localhost:5185"
+	}
+	if cfg.Apps.CatalogCoreURL == "" {
+		cfg.Apps.CatalogCoreURL = "http://localhost:5188"
 	}
 	if cfg.Apps.TodoCenterURL == "" {
 		cfg.Apps.TodoCenterURL = "http://localhost:5186"

@@ -395,6 +395,10 @@ func (s *AuthService) resolveAppURL(app model.Application) string {
 		if s.appCfg.MaterialCoreURL != "" {
 			return s.appCfg.MaterialCoreURL
 		}
+	case "catalogcore":
+		if s.appCfg.CatalogCoreURL != "" {
+			return s.appCfg.CatalogCoreURL
+		}
 	case "todocenter":
 		if s.appCfg.TodoCenterURL != "" {
 			return s.appCfg.TodoCenterURL
