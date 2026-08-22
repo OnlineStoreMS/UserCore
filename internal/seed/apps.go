@@ -44,6 +44,8 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 		{Code: "todo:write", Name: "编辑待办中心", AppCode: "todocenter"},
 		{Code: "self:read", Name: "查看自营中心", AppCode: "selfcore"},
 		{Code: "self:write", Name: "编辑自营中心", AppCode: "selfcore"},
+		{Code: "backup:read", Name: "查看备份恢复", AppCode: "osmsbackup"},
+		{Code: "backup:write", Name: "执行备份恢复", AppCode: "osmsbackup"},
 	}
 	if err := r.Role.EnsurePermissions(perms); err != nil {
 		log.Printf("ensure app permissions: %v", err)
@@ -147,6 +149,12 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 			Icon: "Iphone", URL: defaultURL(apps.OpsMobileURL, "http://localhost:5190"),
 			Sort: 200, Enabled: 1, RequiredPerm: "order:read",
 		},
+		{
+			Code: "osmsbackup", Name: "备份恢复",
+			Description: "OSMS 平台数据备份与灾难恢复：PostgreSQL、MinIO、Redis 归档下载与上传恢复",
+			Icon: "FolderOpened", URL: defaultURL(apps.OsmsBackupURL, "http://localhost:5191"),
+			Sort: 5, Enabled: 1, RequiredPerm: "backup:read",
+		},
 	}
 
 	for i := range defs {
@@ -156,7 +164,7 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 			return
 		}
 	}
-	log.Println("apps ensured: productcore, ordercore, supplycore, selfcore, aftersalescore, mallcore, storecore, storesyncagent, shippingcore, warehousecore, customercore, materialcore, catalogcore, quotecore, todocenter, opsmobile")
+	log.Println("apps ensured: productcore, ordercore, supplycore, selfcore, aftersalescore, mallcore, storecore, storesyncagent, shippingcore, warehousecore, customercore, materialcore, catalogcore, quotecore, todocenter, opsmobile, osmsbackup")
 }
 
 func defaultURL(cfg, fallback string) string {

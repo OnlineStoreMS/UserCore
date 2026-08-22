@@ -57,6 +57,7 @@ type AppsConfig struct {
 	TodoCenterURL       string `mapstructure:"todocenter_url"`
 	SelfCoreURL         string `mapstructure:"selfcore_url"`
 	OpsMobileURL        string `mapstructure:"opsmobile_url"`
+	OsmsBackupURL       string `mapstructure:"osmsbackup_url"`
 }
 
 func Load(path string) (*Config, error) {

@@ -63,3 +63,4 @@ apps:
   todocenter_url: "http://localhost:5186"
   selfcore_url: "http://localhost:5187"
   opsmobile_url: "http://localhost:5190"
+  osmsbackup_url: "http://localhost:5191"
