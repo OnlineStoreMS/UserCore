@@ -64,3 +64,4 @@ apps:
   selfcore_url: "http://localhost:5187"
   opsmobile_url: "http://localhost:5190"
   osmsbackup_url: "http://localhost:5191"
+  agentscenter_url: "http://localhost:5192"

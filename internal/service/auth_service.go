@@ -411,6 +411,14 @@ func (s *AuthService) resolveAppURL(app model.Application) string {
 		if s.appCfg.SelfCoreURL != "" {
 			return s.appCfg.SelfCoreURL
 		}
+	case "osmsbackup":
+		if s.appCfg.OsmsBackupURL != "" {
+			return s.appCfg.OsmsBackupURL
+		}
+	case "agentscenter":
+		if s.appCfg.AgentsCenterURL != "" {
+			return s.appCfg.AgentsCenterURL
+		}
 	}
 	return url
 }
