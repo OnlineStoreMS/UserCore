@@ -65,3 +65,4 @@ apps:
   opsmobile_url: "http://localhost:5190"
   osmsbackup_url: "http://localhost:5191"
   agentscenter_url: "http://localhost:5192"
+  customerservicecore_url: "http://localhost:5193"

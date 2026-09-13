@@ -59,6 +59,7 @@ type AppsConfig struct {
 	OpsMobileURL        string `mapstructure:"opsmobile_url"`
 	OsmsBackupURL       string `mapstructure:"osmsbackup_url"`
 	AgentsCenterURL     string `mapstructure:"agentscenter_url"`
+	CustomerServiceURL  string `mapstructure:"customerservicecore_url"`
 }
 
 func Load(path string) (*Config, error) {
@@ -150,6 +151,9 @@ func Load(path string) (*Config, error) {
 	}
 	if cfg.Apps.AgentsCenterURL == "" {
 		cfg.Apps.AgentsCenterURL = "http://localhost:5192"
+	}
+	if cfg.Apps.CustomerServiceURL == "" {
+		cfg.Apps.CustomerServiceURL = "http://localhost:5193"
 	}
 	if len(cfg.CORS.AllowOrigins) == 0 {
 		cfg.CORS.AllowOrigins = []string{

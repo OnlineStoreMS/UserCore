@@ -48,6 +48,8 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 		{Code: "backup:write", Name: "执行备份恢复", AppCode: "osmsbackup"},
 		{Code: "agents:read", Name: "查看 Agents 中心", AppCode: "agentscenter"},
 		{Code: "agents:write", Name: "管理 Agents 中心", AppCode: "agentscenter"},
+		{Code: "cs:read", Name: "查看客服中心", AppCode: "customerservicecore"},
+		{Code: "cs:write", Name: "管理客服中心", AppCode: "customerservicecore"},
 	}
 	if err := r.Role.EnsurePermissions(perms); err != nil {
 		log.Printf("ensure app permissions: %v", err)
@@ -163,6 +165,12 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 			Icon: "Monitor", URL: defaultURL(apps.AgentsCenterURL, "http://localhost:5192"),
 			Sort: 6, Enabled: 1, RequiredPerm: "agents:read",
 		},
+		{
+			Code: "customerservicecore", Name: "客服中心",
+			Description: "多平台客服消息汇聚（一期抖店飞鸽常开监听）",
+			Icon: "ChatDotRound", URL: defaultURL(apps.CustomerServiceURL, "http://localhost:5193"),
+			Sort: 7, Enabled: 1, RequiredPerm: "cs:read",
+		},
 	}
 
 	for i := range defs {
@@ -172,7 +180,7 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 			return
 		}
 	}
-	log.Println("apps ensured: productcore, ordercore, supplycore, selfcore, aftersalescore, mallcore, storecore, storesyncagent, shippingcore, warehousecore, customercore, materialcore, catalogcore, quotecore, todocenter, opsmobile, osmsbackup, agentscenter")
+	log.Println("apps ensured: productcore, ordercore, supplycore, selfcore, aftersalescore, mallcore, storecore, storesyncagent, shippingcore, warehousecore, customercore, materialcore, catalogcore, quotecore, todocenter, opsmobile, osmsbackup, agentscenter, customerservicecore")
 }
 
 func defaultURL(cfg, fallback string) string {
