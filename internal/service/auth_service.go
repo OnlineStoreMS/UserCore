@@ -423,6 +423,10 @@ func (s *AuthService) resolveAppURL(app model.Application) string {
 		if s.appCfg.CustomerServiceURL != "" {
 			return s.appCfg.CustomerServiceURL
 		}
+	case "aimodelcore":
+		if s.appCfg.AiModelCoreURL != "" {
+			return s.appCfg.AiModelCoreURL
+		}
 	}
 	return url
 }

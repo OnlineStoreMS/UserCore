@@ -66,3 +66,4 @@ apps:
   osmsbackup_url: "http://localhost:5191"
   agentscenter_url: "http://localhost:5192"
   customerservicecore_url: "http://localhost:5193"
+  aimodelcore_url: "http://localhost:5194"

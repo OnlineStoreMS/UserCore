@@ -50,6 +50,8 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 		{Code: "agents:write", Name: "管理 Agents 中心", AppCode: "agentscenter"},
 		{Code: "cs:read", Name: "查看客服中心", AppCode: "customerservicecore"},
 		{Code: "cs:write", Name: "管理客服中心", AppCode: "customerservicecore"},
+		{Code: "aimodel:read", Name: "查看 AI 大模型", AppCode: "aimodelcore"},
+		{Code: "aimodel:write", Name: "管理 AI 大模型", AppCode: "aimodelcore"},
 	}
 	if err := r.Role.EnsurePermissions(perms); err != nil {
 		log.Printf("ensure app permissions: %v", err)
@@ -171,6 +173,12 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 			Icon: "ChatDotRound", URL: defaultURL(apps.CustomerServiceURL, "http://localhost:5193"),
 			Sort: 7, Enabled: 1, RequiredPerm: "cs:read",
 		},
+		{
+			Code: "aimodelcore", Name: "AI 大模型管理中心",
+			Description: "统一配置 DeepSeek、OpenAI、百炼、Grok 等厂商与私有模型，供商品图片修改等应用调用",
+			Icon: "Cpu", URL: defaultURL(apps.AiModelCoreURL, "http://localhost:5194"),
+			Sort: 8, Enabled: 1, RequiredPerm: "aimodel:read",
+		},
 	}
 
 	for i := range defs {
@@ -180,7 +188,7 @@ func EnsureApps(db *gorm.DB, apps config.AppsConfig) {
 			return
 		}
 	}
-	log.Println("apps ensured: productcore, ordercore, supplycore, selfcore, aftersalescore, mallcore, storecore, storesyncagent, shippingcore, warehousecore, customercore, materialcore, catalogcore, quotecore, todocenter, opsmobile, osmsbackup, agentscenter, customerservicecore")
+	log.Println("apps ensured: productcore, ordercore, supplycore, selfcore, aftersalescore, mallcore, storecore, storesyncagent, shippingcore, warehousecore, customercore, materialcore, catalogcore, quotecore, todocenter, opsmobile, osmsbackup, agentscenter, customerservicecore, aimodelcore")
 }
 
 func defaultURL(cfg, fallback string) string {
